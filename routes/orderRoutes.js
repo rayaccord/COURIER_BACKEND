@@ -11,6 +11,7 @@ import {
   rejectOrder,
   getCourierStats,
   getEarningsAnalytics,
+  getWeeklyEarnings,
   cancelOrder,
 } from "../controllers/orderController.js";
 
@@ -75,6 +76,12 @@ router.get(
   "/analytics",
   authMiddleware,
   getEarningsAnalytics
+);
+
+router.get(
+  "/weekly-earnings",
+  authMiddleware,
+  getWeeklyEarnings
 );
 
 export default router;
