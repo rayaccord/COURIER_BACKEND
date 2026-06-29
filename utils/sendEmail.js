@@ -3,16 +3,16 @@ import nodemailer from "nodemailer";
 const sendEmail = async (to, subject, html) => {
   try {
     const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
+  service: "gmail",
 
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
 
-  family: 4,
+  tls: {
+    rejectUnauthorized: false,
+  },
 });
 
     const mailOptions = {
@@ -31,11 +31,16 @@ If you did not request this code, please ignore this email.
   html,
 };
 
-    await transporter.sendMail(mailOptions);
+    await transporter.verify();
+
+console.log("SMTP Connected Successfully");
+
+await transporter.sendMail(mailOptions);
 
     console.log(`Email sent to ${to}`);
   } catch (error) {
-    console.error("Email Error:", error.message);
+    console.error("Email Error");
+console.error(error);
   }
 };
 
