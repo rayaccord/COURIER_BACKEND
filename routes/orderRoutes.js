@@ -24,6 +24,7 @@ router.post(
 
 router.get(
   "/pending",
+  authMiddleware,
   getPendingOrders
 );
 
