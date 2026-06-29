@@ -136,11 +136,11 @@ await Withdrawal.create({
   status: "pending",
 });
 
-// Deduct funds
-courier.wallet.available -=
+// Move funds to pending
+courier.wallet.pending +=
   Number(amount);
 
-// Save transaction
+// Record pending transaction
 courier.transactions.unshift({
   type: "withdrawal",
   amount: Number(amount),
@@ -149,6 +149,7 @@ courier.transactions.unshift({
 });
 
 await courier.save();
+
     res.status(200).json({
       message:
         "Withdrawal request submitted",
