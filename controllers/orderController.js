@@ -99,10 +99,10 @@ for (const courier of nearbyCouriers) {
     courier._id
   );
 
-  order.expiresAt =
-    new Date(
-      Date.now() + 20000
-    );
+ order.expiresAt =
+  new Date(
+    Date.now() + 60000
+  );
 
   await order.save();
 
@@ -135,11 +135,10 @@ for (const courier of nearbyCouriers) {
 export const getPendingOrders =
   async (req, res) => {
     try {
-      const orders =
-        await Order.find({
-          status: "pending",
-        });
-
+const orders = await Order.find({
+  status: "pending",
+  assignedCouriers: req.user.id,
+});
       res.status(200).json(
         orders
       );
@@ -230,6 +229,31 @@ if (existingActiveOrder) {
         req.user.id;
 
       await order.save();
+
+      for (const courierId of order.assignedCouriers) {
+
+  if (
+    courierId.toString() !==
+    req.user.id
+  ) {
+
+    const socketId =
+      connectedCouriers.get(
+        courierId.toString()
+      );
+
+    if (socketId) {
+
+      io.to(socketId).emit(
+        "order-accepted",
+        order._id
+      );
+
+    }
+
+  }
+
+}
 
       res.status(200).json({
         message:
@@ -431,9 +455,15 @@ res.status(200).json({
       }
 
       order.status = "pending";
-      order.courier = null;
+order.courier = null;
 
-      await order.save();
+// Remove this courier from the assigned list
+order.assignedCouriers =
+  order.assignedCouriers.filter(
+    id => id.toString() !== req.user.id
+  );
+
+await order.save();
 
       res.status(200).json({
         message:
@@ -550,11 +580,10 @@ res.status(200).json({
           nextCourier._id
         );
 
-        order.expiresAt =
-          new Date(
-            Date.now() + 20000
-          );
-
+order.expiresAt =
+  new Date(
+    Date.now() + 60000
+  );
         await order.save();
 
         const socketId =
@@ -723,3 +752,69 @@ if (order.courier) {
 
     }
   };
+
+
+
+  export const getWeeklyEarnings =
+async (req, res) => {
+
+  try {
+
+    const weekData = [
+      0,0,0,0,0,0,0
+    ];
+
+    const today = new Date();
+
+    const startOfWeek = new Date(today);
+
+    startOfWeek.setDate(
+      today.getDate() - today.getDay()
+    );
+
+    startOfWeek.setHours(
+      0,
+      0,
+      0,
+      0
+    );
+
+    const orders =
+      await Order.find({
+
+        courier: req.user.id,
+
+        status: "delivered",
+
+        updatedAt: {
+          $gte: startOfWeek,
+        },
+
+      });
+
+    orders.forEach(order => {
+
+      const day =
+        new Date(
+          order.updatedAt
+        ).getDay();
+
+      weekData[day] +=
+        order.fee;
+
+    });
+
+    res.json(weekData);
+
+  } catch (error) {
+
+    res.status(500).json({
+
+      message:
+        "Failed to fetch weekly earnings",
+
+    });
+
+  }
+
+};
