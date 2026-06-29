@@ -132,24 +132,28 @@ for (const courier of nearbyCouriers) {
 };
 
 /* GET PENDING ORDERS */
-export const getPendingOrders =
-  async (req, res) => {
-    try {
-const orders = await Order.find({
-  status: "pending",
-  assignedCouriers: req.user.id,
-});
-      res.status(200).json(
-        orders
-      );
+export const getPendingOrders = async (req, res) => {
+  try {
 
-    } catch (error) {
-      res.status(500).json({
-        message: "Server Error",
-      });
-    }
-  };
+    console.log("USER:", req.user);
 
+    const orders = await Order.find({
+      status: "pending",
+      assignedCouriers: req.user.id,
+    });
+
+    res.status(200).json(orders);
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      message: error.message,
+    });
+
+  }
+};
 
   export const acceptOrder =
   async (req, res) => {
