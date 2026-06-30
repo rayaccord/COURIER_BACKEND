@@ -37,7 +37,7 @@ const nearbyCouriers =
     location: {
       $near: {
         $geometry: order.pickupLocation,
-        $maxDistance: 50000,
+        $maxDistance: 5000000,
       },
     },
   });
