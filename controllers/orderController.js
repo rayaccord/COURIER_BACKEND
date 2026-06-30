@@ -31,9 +31,16 @@ export const createOrder = async (
 });
 
 
-const nearbyCouriers = await Courier.find({
-  online: true,
-});
+const nearbyCouriers =
+  await Courier.find({
+    online: true,
+    location: {
+      $near: {
+        $geometry: order.pickupLocation,
+        $maxDistance: 50000,
+      },
+    },
+  });
 
 console.log(
   "Pickup Location:",
