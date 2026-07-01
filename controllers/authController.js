@@ -262,6 +262,12 @@ export const loginCourier = async (req, res) => {
       });
     }
 
+
+    courier.online = false;
+
+await courier.save();
+
+
     /* TOKEN */
     const token = generateToken(courier._id);
 
