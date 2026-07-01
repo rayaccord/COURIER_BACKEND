@@ -146,10 +146,27 @@ transactions: [
 ],
 
     online: {
-      type: Boolean,
-      default: false,
-    },
+  type: Boolean,
+  default: false,
+},
 
+fcmToken: {
+  type: String,
+  default: "",
+},
+
+location: {
+  type: {
+    type: String,
+    enum: ["Point"],
+    default: "Point",
+  },
+
+  coordinates: {
+    type: [Number], // [lng, lat]
+    default: [0, 0],
+  },
+},
     location: {
       type: {
         type: String,
