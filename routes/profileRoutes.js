@@ -6,6 +6,7 @@ import {
   updateProfile,
   updateLocation,
   updateOnlineStatus,
+  updateFcmToken,
 } from "../controllers/profileController.js";
 
 const router = express.Router();
@@ -32,5 +33,11 @@ router.put(
   "/online",
   authMiddleware,
   updateOnlineStatus
+);
+
+router.put(
+  "/fcm-token",
+  authMiddleware,
+  updateFcmToken
 );
 export default router;
