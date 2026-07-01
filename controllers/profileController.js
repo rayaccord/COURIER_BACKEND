@@ -83,6 +83,8 @@ export const updateLocation =
         lng,
       } = req.body;
 
+      
+
       const courier =
         await Courier.findById(
           req.user.id
@@ -163,3 +165,36 @@ export const updateLocation =
 
     }
   };
+
+
+
+  export const updateFcmToken = async (req, res) => {
+  try {
+
+    const { fcmToken } = req.body;
+
+    const courier =
+      await Courier.findById(req.user.id);
+
+    if (!courier) {
+      return res.status(404).json({
+        message: "Courier not found",
+      });
+    }
+
+    courier.fcmToken = fcmToken;
+
+    await courier.save();
+
+    res.status(200).json({
+      message: "FCM token saved successfully",
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: "Failed to save FCM token",
+    });
+
+  }
+};
