@@ -7,6 +7,7 @@ import connectDB from "./config/db.js";
 import {
   reassignExpiredOrders,
 } from "./controllers/orderController.js";
+import "./config/firebaseAdmin.js";
 
 dotenv.config();
 

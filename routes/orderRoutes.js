@@ -84,5 +84,4 @@ router.get(
   authMiddleware,
   getWeeklyEarnings
 );
-
 export default router;

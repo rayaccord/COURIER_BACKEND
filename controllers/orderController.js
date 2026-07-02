@@ -4,6 +4,7 @@ import {
   io,
   connectedCouriers,
 } from "../server.js";
+import { getMessaging } from "firebase-admin/messaging";
 
 /* CREATE ORDER */
 export const createOrder = async (
@@ -99,9 +100,9 @@ for (const courier of nearbyCouriers) {
     courier._id
   );
 
- order.expiresAt =
+order.expiresAt =
   new Date(
-    Date.now() + 60000
+    Date.now() + 5 * 60 * 1000
   );
 
   await order.save();
@@ -110,6 +111,42 @@ for (const courier of nearbyCouriers) {
     "new-order",
     order
   );
+
+
+
+
+  if (courier.fcmToken) {
+
+  await getMessaging().send({
+
+    token: courier.fcmToken,
+
+    notification: {
+      title: "🚚 New Delivery Request",
+      body: `${order.restaurantName} • Fee: ₦${order.fee}`,
+    },
+
+    data: {
+      orderId: order._id.toString(),
+      screen: "requests",
+    },
+
+    webpush: {
+      notification: {
+        icon: "/courier.png",
+        badge: "/courier.png",
+      },
+    },
+
+  });
+
+}
+
+
+  
+
+
+
 
   console.log(
     "Order sent to:",
@@ -142,9 +179,13 @@ export const getPendingOrders = async (req, res) => {
     console.log("Before query...");
 
     const orders = await Order.find({
-      status: "pending",
-      assignedCouriers: req.user.id,
-    });
+
+  status: "pending",
+  assignedCouriers: req.user.id,
+  expiresAt: {
+    $gt: new Date(),
+  },
+});
 
     console.log("After query...");
     console.log(orders);
@@ -600,7 +641,7 @@ await order.save();
 
 order.expiresAt =
   new Date(
-    Date.now() + 60000
+Date.now() + 5 * 60 * 1000
   );
         await order.save();
 
@@ -611,16 +652,43 @@ order.expiresAt =
 
         if (socketId) {
 
-          io.to(socketId).emit(
-            "new-order",
-            order
-          );
+  io.to(socketId).emit(
+    "new-order",
+    order
+  );
 
-          console.log(
-            "Reassigned to:",
-            nextCourier.email
-          );
-        }
+  if (nextCourier.fcmToken) {
+
+    await getMessaging().send({
+
+      token: nextCourier.fcmToken,
+
+      notification: {
+        title: "🚚 New Delivery Request",
+        body: `${order.restaurantName} • Fee: ₦${order.fee}`,
+      },
+
+      data: {
+        orderId: order._id.toString(),
+        screen: "requests",
+      },
+
+      webpush: {
+        notification: {
+         icon: "/courier.png",
+        badge: "/courier.png",
+        },
+      },
+
+    });
+
+  }
+
+  console.log(
+    "Reassigned to:",
+    nextCourier.email
+  );
+}
       }
 
     } catch (error) {

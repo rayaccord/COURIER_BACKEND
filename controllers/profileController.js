@@ -1,4 +1,5 @@
 import Courier from "../models/Courier.js";
+import { getMessaging } from "firebase-admin/messaging";
 
 /* GET PROFILE */
 export const getProfile = async (req, res) => {
@@ -12,14 +13,15 @@ export const getProfile = async (req, res) => {
     }
 
     res.status(200).json({
-      fullName: courier.fullName,
-      email: courier.email,
-      phone: courier.phone,
-      vehicle: courier.vehicle,
-      city: courier.city,
-      rating: courier.rating,
-      completedOrders: courier.completedOrders,
-    });
+  fullName: courier.fullName,
+  email: courier.email,
+  phone: courier.phone,
+  vehicle: courier.vehicle,
+  city: courier.city,
+  rating: courier.rating,
+  completedOrders: courier.completedOrders,
+  online: courier.online,
+});
 
   } catch (error) {
     res.status(500).json({
@@ -196,5 +198,35 @@ export const updateLocation =
       message: "Failed to save FCM token",
     });
 
+  }
+};
+export const sendTestNotification = async (req, res) => {
+  try {
+    const courier = await Courier.findById(req.user.id);
+
+    if (!courier || !courier.fcmToken) {
+      return res.status(404).json({
+        message: "No FCM token found.",
+      });
+    }
+
+    await getMessaging().send({
+      token: courier.fcmToken,
+      notification: {
+        title: "🧪 Test Notification",
+        body: "Congratulations! Firebase Cloud Messaging is working.",
+      },
+    });
+
+    res.json({
+      message: "Test notification sent successfully.",
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };

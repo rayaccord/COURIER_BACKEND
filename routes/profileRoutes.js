@@ -1,13 +1,15 @@
 import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
 
+console.log("✅ profileRoutes loaded");
+
 import {
   getProfile,
   updateProfile,
   updateLocation,
   updateOnlineStatus,
   updateFcmToken,
-} from "../controllers/profileController.js";
+sendTestNotification,} from "../controllers/profileController.js";
 
 const router = express.Router();
 
@@ -40,4 +42,10 @@ router.put(
   authMiddleware,
   updateFcmToken
 );
+router.post(
+  "/test-notification",
+  authMiddleware,
+  sendTestNotification
+);
+
 export default router;
