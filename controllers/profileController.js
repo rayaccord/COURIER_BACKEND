@@ -175,6 +175,9 @@ export const updateLocation =
 
     const { fcmToken } = req.body;
 
+    console.log("FCM TOKEN RECEIVED:");
+console.log(fcmToken);
+
     const courier =
       await Courier.findById(req.user.id);
 
@@ -187,6 +190,9 @@ export const updateLocation =
     courier.fcmToken = fcmToken;
 
     await courier.save();
+
+    console.log("TOKEN SAVED FOR:", courier.email);
+console.log(courier.fcmToken);
 
     res.status(200).json({
       message: "FCM token saved successfully",
