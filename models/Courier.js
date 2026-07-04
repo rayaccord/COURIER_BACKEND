@@ -155,18 +155,6 @@ fcmToken: {
   default: "",
 },
 
-location: {
-  type: {
-    type: String,
-    enum: ["Point"],
-    default: "Point",
-  },
-
-  coordinates: {
-    type: [Number], // [lng, lat]
-    default: [0, 0],
-  },
-},
     location: {
       type: {
         type: String,
