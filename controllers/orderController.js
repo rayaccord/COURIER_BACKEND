@@ -108,14 +108,14 @@ order.expiresAt =
   await order.save();
 
   io.to(socketId).emit(
-    "new-order",
-    order
-  );
+  "new-order",
+  order
+);
 
+// Only send Firebase notification if the courier
+// is NOT currently connected by Socket.IO.
 
-
-
-  if (courier.fcmToken) {
+if (!socketId && courier.fcmToken) {
 
   await getMessaging().send({
 
@@ -141,9 +141,7 @@ order.expiresAt =
   });
 
 }
-
-
-  
+ 
 
 
 
