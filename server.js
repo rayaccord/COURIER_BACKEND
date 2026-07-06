@@ -98,11 +98,7 @@ io.on(
   }
 );
 
-/*setInterval(() => {
 
-  reassignExpiredOrders();
-
-}, 5000);*/
 
 
 const PORT =
