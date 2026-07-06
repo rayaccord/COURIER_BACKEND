@@ -587,7 +587,7 @@ await order.save();
 
 
 
-  export const reassignExpiredOrders =
+  /* export const reassignExpiredOrders =
   async () => {
 
     try {
@@ -684,6 +684,7 @@ Date.now() + 5 * 60 * 1000
 
   }
 
+
   console.log(
     "Reassigned to:",
     nextCourier.email
@@ -700,7 +701,7 @@ Date.now() + 5 * 60 * 1000
 
     }
 
-  };
+  };*/
 
 
   export const cancelOrder =
