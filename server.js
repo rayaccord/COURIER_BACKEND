@@ -98,12 +98,6 @@ io.on(
   }
 );
 
-setInterval(() => {
-
-  reassignExpiredOrders();
-
-}, 5000);
-
 
 const PORT =
   process.env.PORT || 5000;
