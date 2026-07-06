@@ -97,15 +97,10 @@ for (const courier of nearbyCouriers) {
   if (socketId) {
 
   order.assignedCouriers.push(
-    courier._id
-  );
+  courier._id
+);
 
-order.expiresAt =
-  new Date(
-    Date.now() + 5 * 60 * 1000
-  );
-
-  await order.save();
+await order.save();
 
   io.to(socketId).emit(
     "new-order",
@@ -179,12 +174,8 @@ export const getPendingOrders = async (req, res) => {
     console.log("Before query...");
 
     const orders = await Order.find({
-
   status: "pending",
   assignedCouriers: req.user.id,
-  expiresAt: {
-    $gt: new Date(),
-  },
 });
 
     console.log("After query...");
@@ -587,122 +578,8 @@ await order.save();
 
 
 
-  export const reassignExpiredOrders =
-  async () => {
-
-    try {
-
-      const expiredOrders =
-        await Order.find({
-          status: "pending",
-          expiresAt: {
-            $lte: new Date(),
-          },
-        });
-
-      for (const order of expiredOrders) {
-
-        console.log(
-          "Reassigning Order:",
-          order.orderNumber
-        );
-
-        const availableCouriers =
-          await Courier.find({
-            online: true,
-            _id: {
-              $nin:
-                order.assignedCouriers,
-            },
-          });
-
-        if (
-          availableCouriers.length === 0
-        ) {
-
-          console.log(
-            "No couriers left for:",
-            order.orderNumber
-          );
-
-          order.expiresAt = null;
-
-          await order.save();
-
-          continue;
-        }
-
-        const nextCourier =
-          availableCouriers[0];
-
-        order.assignedCouriers.push(
-          nextCourier._id
-        );
-
-order.expiresAt =
-  new Date(
-Date.now() + 5 * 60 * 1000
-  );
-        await order.save();
-
-        const socketId =
-          connectedCouriers.get(
-            nextCourier._id.toString()
-          );
-
-        if (socketId) {
-
-  io.to(socketId).emit(
-    "new-order",
-    order
-  );
-
-  if (nextCourier.fcmToken) {
-
-    await getMessaging().send({
-
-      token: nextCourier.fcmToken,
-
-      notification: {
-        title: "🚚 New Delivery Request",
-        body: `${order.restaurantName} • Fee: ₦${order.fee}`,
-      },
-
-      data: {
-        orderId: order._id.toString(),
-        screen: "requests",
-      },
-
-      webpush: {
-        notification: {
-         icon: "/courier.png",
-        badge: "/courier.png",
-        },
-      },
-
-    });
-
-  }
-
   
 
-  console.log(
-    "Reassigned to:",
-    nextCourier.email
-  );
-}
-      }
-
-    } catch (error) {
-
-      console.log(
-        "Reassignment Error:",
-        error
-      );
-
-    }
-
-  };
 
 
   export const cancelOrder =
