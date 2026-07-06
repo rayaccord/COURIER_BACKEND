@@ -1,65 +1,26 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendEmail = async (to, subject, html) => {
   try {
+    const { error } = await resend.emails.send({
+      from: "Hooks Food <noreply@getcoredispatch.cloud>",
+      to,
+      subject,
+      html,
+    });
 
-    console.log("EMAIL USER:", process.env.EMAIL_USER);
-console.log(
-  "EMAIL PASS EXISTS:",
-  !!process.env.EMAIL_PASS
-);
+    if (error) {
+      console.error("Resend Error:", error);
+      throw new Error(error.message);
+    }
 
-    const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  family: 4,
-
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-
-  connectionTimeout: 30000,
-  greetingTimeout: 30000,
-  socketTimeout: 30000,
-
-  tls: {
-    rejectUnauthorized: false,
-  },
-});
-
-    const mailOptions = {
-  from: `"HOOKS FOOD Courier" <${process.env.EMAIL_USER}>`,
-  to,
-  subject,
-
-  text: `
-Your HOOKS FOOD verification code is:
-
-${html.replace(/<[^>]*>/g, "")}
-
-If you did not request this code, please ignore this email.
-  `,
-
-  html,
-};
-
-    await transporter.verify();
-
-console.log("SMTP Connected Successfully");
-
-await transporter.sendMail(mailOptions);
-
-    console.log(`Email sent to ${to}`);
- } catch (error) {
-  console.error("========== EMAIL ERROR ==========");
-  console.error(error);
-  console.error("code:", error.code);
-  console.error("response:", error.response);
-  console.error("command:", error.command);
-  console.error("================================");
-}
+    console.log(`Email sent successfully to ${to}`);
+  } catch (error) {
+    console.error("Email Error:", error);
+    throw error;
+  }
 };
 
 export default sendEmail;
