@@ -34,10 +34,14 @@ export const getProfile = async (req, res) => {
   online: courier.online,
 });
   } catch (error) {
-    res.status(500).json({
-      message: "Server Error",
-    });
-  }
+  console.log("GET PROFILE ERROR:");
+  console.log(error);
+
+  res.status(500).json({
+    message: "Server Error",
+    error: error.message,
+  });
+}
 };
 
 /* UPDATE PROFILE */
@@ -94,10 +98,14 @@ courier.address =
     });
 
   } catch (error) {
-    res.status(500).json({
-      message: "Server Error",
-    });
-  }
+  console.log("UPDATE PROFILE ERROR:");
+  console.log(error);
+
+  res.status(500).json({
+    message: "Server Error",
+    error: error.message,
+  });
+}
 };
 
 
