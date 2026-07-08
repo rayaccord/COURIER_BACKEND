@@ -218,7 +218,7 @@ fcmToken: {
 courierSchema.index({ location: "2dsphere" });
 
 /* Generate Referral Code */
-courierSchema.pre("save", function (next) {
+courierSchema.pre("save", async function () {
 
   if (!this.referralCode) {
 
@@ -230,7 +230,6 @@ courierSchema.pre("save", function (next) {
     this.referralCode = `CORE-${random}`;
   }
 
-  next();
 });
 
 
