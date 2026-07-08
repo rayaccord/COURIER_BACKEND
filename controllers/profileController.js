@@ -18,11 +18,21 @@ export const getProfile = async (req, res) => {
   phone: courier.phone,
   vehicle: courier.vehicle,
   city: courier.city,
+
+  vehicleRegistration: courier.vehicleRegistration,
+  governmentId: courier.governmentId,
+  address: courier.address,
+
+  referralCode: courier.referralCode,
+  referralBalance: courier.referralBalance,
+  successfulReferrals: courier.successfulReferrals,
+  pendingReferrals: courier.pendingReferrals,
+  referralTotalEarned: courier.referralTotalEarned,
+
   rating: courier.rating,
   completedOrders: courier.completedOrders,
   online: courier.online,
 });
-
   } catch (error) {
     res.status(500).json({
       message: "Server Error",
@@ -33,12 +43,16 @@ export const getProfile = async (req, res) => {
 /* UPDATE PROFILE */
 export const updateProfile = async (req, res) => {
   try {
-    const {
-      fullName,
-      phone,
-      vehicle,
-      city,
-    } = req.body;
+const {
+  fullName,
+  phone,
+  vehicle,
+  city,
+
+  vehicleRegistration,
+  governmentId,
+  address,
+} = req.body;
 
     const courier = await Courier.findById(req.user.id);
 
@@ -59,6 +73,18 @@ export const updateProfile = async (req, res) => {
 
     courier.city =
       city ?? courier.city;
+
+      courier.vehicleRegistration =
+  vehicleRegistration ??
+  courier.vehicleRegistration;
+
+courier.governmentId =
+  governmentId ??
+  courier.governmentId;
+
+courier.address =
+  address ??
+  courier.address;
 
     await courier.save();
 
