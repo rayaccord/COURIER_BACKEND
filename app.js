@@ -8,6 +8,7 @@ import profileRoutes from "./routes/profileRoutes.js";
 import walletRoutes from "./routes/walletRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import courierRoutes from "./routes/courierRoutes.js";
+import surgeRoutes from "./routes/surgeRoutes.js";
 
 
 const app = express();
@@ -36,6 +37,12 @@ app.use(
 app.use(
   "/api/courier",
   courierRoutes
+);
+
+
+app.use(
+  "/api/surge",
+  surgeRoutes
 );
 
 export default app;``
