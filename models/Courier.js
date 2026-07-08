@@ -32,6 +32,47 @@ const courierSchema = new mongoose.Schema(
   default: "",
 },
 
+vehicleRegistration: {
+  type: String,
+  default: "",
+},
+
+governmentId: {
+  type: String,
+  default: "",
+},
+
+address: {
+  type: String,
+  default: "",
+},
+
+referralCode: {
+  type: String,
+  unique: true,
+  default: "",
+},
+
+referralBalance: {
+  type: Number,
+  default: 0,
+},
+
+successfulReferrals: {
+  type: Number,
+  default: 0,
+},
+
+pendingReferrals: {
+  type: Number,
+  default: 0,
+},
+
+referralTotalEarned: {
+  type: Number,
+  default: 0,
+},
+
     password: {
       type: String,
       required: true,
@@ -175,6 +216,23 @@ fcmToken: {
 
 /* GEO INDEX */
 courierSchema.index({ location: "2dsphere" });
+
+/* Generate Referral Code */
+courierSchema.pre("save", function (next) {
+
+  if (!this.referralCode) {
+
+    const random = Math.random()
+      .toString(36)
+      .substring(2, 8)
+      .toUpperCase();
+
+    this.referralCode = `CORE-${random}`;
+  }
+
+  next();
+});
+
 
 const Courier = mongoose.model("Courier", courierSchema);
 
