@@ -1,21 +1,61 @@
 import SurgeZone from "../models/SurgeZone.js";
 
-/* ================= GET ALL ACTIVE SURGE ZONES ================= */
+/* ================= GET SURGE ZONES NEAR COURIER ================= */
+
 export const getSurgeZones = async (req, res) => {
+
   try {
-    const zones = await SurgeZone.find({
-      active: true,
-    });
+
+    const lat = Number(req.query.lat);
+    const lng = Number(req.query.lng);
+
+    if (
+      Number.isNaN(lat) ||
+      Number.isNaN(lng)
+    ) {
+      return res.status(400).json({
+        message: "Latitude and longitude are required",
+      });
+    }
+
+    const multipliers = [
+      "1x",
+      "2.4x",
+      "3x",
+    ];
+
+    const zones = Array.from({ length: 3 }).map(() => ({
+
+      lat:
+        lat + (Math.random() - 0.5) * 0.02,
+
+      lng:
+        lng + (Math.random() - 0.5) * 0.02,
+
+      radius: 400,
+
+      multiplier:
+        multipliers[
+          Math.floor(
+            Math.random() *
+              multipliers.length
+          )
+        ],
+
+    }));
 
     res.json(zones);
 
   } catch (error) {
+
     console.log(error);
 
     res.status(500).json({
-      message: "Failed to load surge zones",
+      message: "Failed to generate surge zones",
     });
+
   }
+
 };
 
 /* ================= CREATE SURGE ZONE ================= */
