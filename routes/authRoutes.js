@@ -1,4 +1,5 @@
 import express from "express";
+import upload from "../middleware/upload.js";
 
 import {
   registerCourier,
@@ -13,7 +14,24 @@ import {
 const router = express.Router();
 
 /* REGISTER */
-router.post("/register", registerCourier);
+router.post(
+  "/register",
+  upload.fields([
+    {
+      name: "governmentIdFront",
+      maxCount: 1,
+    },
+    {
+      name: "governmentIdBack",
+      maxCount: 1,
+    },
+    {
+      name: "vehiclePhoto",
+      maxCount: 1,
+    },
+  ]),
+  registerCourier
+);
 
 /* VERIFY ACCOUNT */
 router.post("/verify", verifyCourier);

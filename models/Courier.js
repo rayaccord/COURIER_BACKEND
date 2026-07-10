@@ -37,12 +37,27 @@ vehicleRegistration: {
   default: "",
 },
 
-governmentId: {
+homeAddress: {
   type: String,
   default: "",
 },
 
-address: {
+governmentIdType: {
+  type: String,
+  default: "",
+},
+
+governmentIdFront: {
+  type: String,
+  default: "",
+},
+
+governmentIdBack: {
+  type: String,
+  default: "",
+},
+
+vehiclePhoto: {
   type: String,
   default: "",
 },

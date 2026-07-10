@@ -1,4 +1,5 @@
 import express from "express";
+import path from "path";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
@@ -45,4 +46,9 @@ app.use(
   surgeRoutes
 );
 
-export default app;``
+app.use(
+  "/uploads",
+  express.static(path.join(process.cwd(), "uploads"))
+);
+
+export default app;

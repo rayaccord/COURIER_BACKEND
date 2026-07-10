@@ -8,14 +8,46 @@ import generateToken from "../utils/generateToken.js";
 /* ================= REGISTER COURIER ================= */
 export const registerCourier = async (req, res) => {
   try {
-    const { email, phone, vehicle, password } = req.body;
+    const {
+  fullName,
+  email,
+  phone,
+  city,
+  homeAddress,
+  vehicle,
+  vehicleRegistration,
+  governmentIdType,
+  password,
+} = req.body;
 
     /* VALIDATION */
-    if (!email || !phone || !vehicle || !password) {
-      return res.status(400).json({
-        message: "All fields are required",
-      });
-    }
+   const governmentIdFront =
+  req.files?.governmentIdFront?.[0]?.filename || "";
+
+const governmentIdBack =
+  req.files?.governmentIdBack?.[0]?.filename || "";
+
+const vehiclePhoto =
+  req.files?.vehiclePhoto?.[0]?.filename || "";
+
+if (
+  !fullName ||
+  !email ||
+  !phone ||
+  !city ||
+  !homeAddress ||
+  !vehicle ||
+  !vehicleRegistration ||
+  !governmentIdType ||
+  !password ||
+  !governmentIdFront ||
+  !governmentIdBack ||
+  !vehiclePhoto
+) {
+  return res.status(400).json({
+    message: "All fields are required",
+  });
+}
 
 /* CHECK EXISTING COURIER */
 const existingCourier =
@@ -54,11 +86,17 @@ if (existingPending) {
     /* CREATE COURIER */
 /* SAVE TEMPORARY COURIER */
 await PendingCourier.create({
-  fullName: req.body.fullName,
+  fullName,
   email,
   phone,
-  city: req.body.city,
+  city,
+  homeAddress,
   vehicle,
+  vehicleRegistration,
+  governmentIdType,
+  governmentIdFront,
+  governmentIdBack,
+  vehiclePhoto,
   password: hashedPassword,
   verificationCode,
   verificationCodeExpires:
@@ -165,28 +203,38 @@ export const verifyCourier = async (req, res) => {
       });
     }
 
-    const courier =
-      await Courier.create({
-        fullName:
-          pendingCourier.fullName,
+   const courier = await Courier.create({
+  fullName: pendingCourier.fullName,
 
-        email:
-          pendingCourier.email,
+  email: pendingCourier.email,
 
-        phone:
-          pendingCourier.phone,
+  phone: pendingCourier.phone,
 
-        city:
-          pendingCourier.city,
+  city: pendingCourier.city,
 
-        vehicle:
-          pendingCourier.vehicle,
+  homeAddress: pendingCourier.homeAddress,
 
-        password:
-          pendingCourier.password,
+  vehicle: pendingCourier.vehicle,
 
-        isVerified: true,
-      });
+  vehicleRegistration:
+    pendingCourier.vehicleRegistration,
+
+  governmentIdType:
+    pendingCourier.governmentIdType,
+
+  governmentIdFront:
+    pendingCourier.governmentIdFront,
+
+  governmentIdBack:
+    pendingCourier.governmentIdBack,
+
+  vehiclePhoto:
+    pendingCourier.vehiclePhoto,
+
+  password: pendingCourier.password,
+
+  isVerified: true,
+});
 
     await PendingCourier.deleteOne({
       _id: pendingCourier._id,
@@ -202,18 +250,23 @@ export const verifyCourier = async (req, res) => {
       token,
 
       courier: {
-        id: courier._id,
-        fullName:
-          courier.fullName,
-        email:
-          courier.email,
-        phone:
-          courier.phone,
-        city:
-          courier.city,
-        vehicle:
-          courier.vehicle,
-      },
+  id: courier._id,
+  fullName: courier.fullName,
+  email: courier.email,
+  phone: courier.phone,
+  city: courier.city,
+  homeAddress: courier.homeAddress,
+    vehicle: courier.vehicle,
+  vehicleRegistration:
+    courier.vehicleRegistration,
+  governmentIdType: courier.governmentIdType,
+    governmentIdFront:
+    courier.governmentIdFront,
+  governmentIdBack:
+    courier.governmentIdBack,
+  vehiclePhoto:
+    courier.vehiclePhoto,
+},
     });
 
   } catch (error) {
@@ -276,12 +329,26 @@ await courier.save();
 
       token,
 
-      courier: {
-        id: courier._id,
-        email: courier.email,
-        phone: courier.phone,
-        vehicle: courier.vehicle,
-      },
+     courier: {
+  id: courier._id,
+  fullName: courier.fullName,
+  email: courier.email,
+  phone: courier.phone,
+  city: courier.city,
+  homeAddress:
+  courier.homeAddress,
+  vehicle: courier.vehicle,
+  vehicleRegistration:
+    courier.vehicleRegistration,
+  governmentIdType:
+  courier.governmentIdType,
+  governmentIdFront:
+    courier.governmentIdFront,
+  governmentIdBack:
+    courier.governmentIdBack,
+  vehiclePhoto:
+    courier.vehiclePhoto,
+},
     });
 
   } catch (error) {

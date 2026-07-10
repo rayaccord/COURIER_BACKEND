@@ -30,6 +30,37 @@ const pendingCourierSchema =
         required: true,
       },
 
+
+      homeAddress: {
+  type: String,
+  default: "",
+},
+
+vehicleRegistration: {
+  type: String,
+  default: "",
+},
+
+governmentIdType: {
+  type: String,
+  default: "",
+},
+
+governmentIdFront: {
+  type: String,
+  default: "",
+},
+
+governmentIdBack: {
+  type: String,
+  default: "",
+},
+
+vehiclePhoto: {
+  type: String,
+  default: "",
+},
+
       password: {
         type: String,
         required: true,
