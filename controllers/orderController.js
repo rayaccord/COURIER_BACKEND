@@ -112,24 +112,33 @@ await order.save();
 
   if (courier.expoPushToken) {
   try {
-    await fetch("https://exp.host/--/api/v2/push/send", {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Accept-Encoding": "gzip, deflate",
-        "Content-Type": "application/json",
+    const response = await fetch(
+  "https://exp.host/--/api/v2/push/send",
+  {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Accept-Encoding": "gzip, deflate",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      to: courier.expoPushToken,
+      sound: "default",
+      title: "🚚 New Delivery Available",
+      body: `${order.restaurantName}\nFee: ₦${order.fee}`,
+      data: {
+        orderId: order._id.toString(),
+        screen: "requests",
       },
-      body: JSON.stringify({
-        to: courier.expoPushToken,
-        sound: "default",
-        title: "🚚 New Delivery Available",
-        body: `${order.restaurantName}\nFee: ₦${order.fee}`,
-        data: {
-          orderId: order._id.toString(),
-          screen: "requests",
-        },
-      }),
-    });
+    }),
+  }
+);
+
+const result = await response.json();
+
+console.log("EXPO PUSH RESPONSE:");
+console.log(result);
+
 
     console.log(
       `Push notification sent to ${courier.email}`
@@ -787,3 +796,4 @@ async (req, res) => {
   }
 
 };
+
