@@ -5,6 +5,7 @@ import {
   getProfile,
   updateProfile,
   updateLocation,
+  savePushToken,
 } from "../controllers/courierController.js";
 
 const router =
@@ -26,6 +27,12 @@ router.put(
   "/location",
   authMiddleware,
   updateLocation
+);
+
+router.post(
+  "/push-token",
+  authMiddleware,
+  savePushToken
 );
 
 export default router;

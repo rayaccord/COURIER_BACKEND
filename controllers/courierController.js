@@ -135,3 +135,39 @@ export const updateLocation =
 
     }
   };
+
+
+
+  export const savePushToken = async (req, res) => {
+
+  try {
+
+    const { expoPushToken } = req.body;
+
+    const courier =
+      await Courier.findById(req.user.id);
+
+    if (!courier) {
+      return res.status(404).json({
+        message: "Courier not found",
+      });
+    }
+
+    courier.expoPushToken =
+      expoPushToken;
+
+    await courier.save();
+
+    res.json({
+      message: "Push token saved",
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: "Failed to save push token",
+    });
+
+  }
+
+};

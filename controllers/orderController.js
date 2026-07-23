@@ -4,7 +4,7 @@ import {
   io,
   connectedCouriers,
 } from "../server.js";
-import { getMessaging } from "firebase-admin/messaging";
+
 
 /* CREATE ORDER */
 export const createOrder = async (
@@ -110,31 +110,35 @@ await order.save();
 
 
 
-  if (courier.fcmToken) {
-
-  await getMessaging().send({
-
-    token: courier.fcmToken,
-
-    notification: {
-      title: "🚚 New Delivery Request",
-      body: `${order.restaurantName} • Fee: ₦${order.fee}`,
-    },
-
-    data: {
-      orderId: order._id.toString(),
-      screen: "requests",
-    },
-
-    webpush: {
-      notification: {
-        icon: "/courier.png",
-        badge: "/courier.png",
+  if (courier.expoPushToken) {
+  try {
+    await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Accept-Encoding": "gzip, deflate",
+        "Content-Type": "application/json",
       },
-    },
+      body: JSON.stringify({
+        to: courier.expoPushToken,
+        sound: "default",
+        title: "🚚 New Delivery Available",
+        body: `${order.restaurantName}\nFee: ₦${order.fee}`,
+        data: {
+          orderId: order._id.toString(),
+          screen: "requests",
+        },
+      }),
+    });
 
-  });
+    console.log(
+      `Push notification sent to ${courier.email}`
+    );
 
+  } catch (err) {
+    console.log("Push Notification Error");
+    console.log(err);
+  }
 }
 
 

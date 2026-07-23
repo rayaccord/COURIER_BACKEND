@@ -8,8 +8,8 @@ import {
   updateProfile,
   updateLocation,
   updateOnlineStatus,
-  updateFcmToken,
-sendTestNotification,} from "../controllers/profileController.js";
+  savePushToken,
+} from "../controllers/profileController.js";
 
 const router = express.Router();
 
@@ -37,15 +37,11 @@ router.put(
   updateOnlineStatus
 );
 
-router.put(
-  "/fcm-token",
-  authMiddleware,
-  updateFcmToken
-);
 router.post(
-  "/test-notification",
+  "/push-token",
   authMiddleware,
-  sendTestNotification
+  savePushToken
 );
+
 
 export default router;

@@ -206,11 +206,10 @@ transactions: [
   default: false,
 },
 
-fcmToken: {
+expoPushToken: {
   type: String,
   default: "",
 },
-
     location: {
       type: {
         type: String,

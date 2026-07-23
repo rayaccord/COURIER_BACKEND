@@ -204,16 +204,15 @@ export const updateLocation =
 
 
 
-  export const updateFcmToken = async (req, res) => {
+  export const savePushToken = async (req, res) => {
   try {
 
-    const { fcmToken } = req.body;
+    const { token } = req.body;
 
-    console.log("FCM TOKEN RECEIVED:");
-console.log(fcmToken);
+    console.log("EXPO PUSH TOKEN RECEIVED:");
+    console.log(token);
 
-    const courier =
-      await Courier.findById(req.user.id);
+    const courier = await Courier.findById(req.user.id);
 
     if (!courier) {
       return res.status(404).json({
@@ -221,25 +220,29 @@ console.log(fcmToken);
       });
     }
 
-    courier.fcmToken = fcmToken;
+    courier.expoPushToken = token;
 
     await courier.save();
 
     console.log("TOKEN SAVED FOR:", courier.email);
-console.log(courier.fcmToken);
+    console.log(courier.expoPushToken);
 
     res.status(200).json({
-      message: "FCM token saved successfully",
+      message: "Push token saved successfully",
     });
 
   } catch (error) {
 
+    console.log(error);
+
     res.status(500).json({
-      message: "Failed to save FCM token",
+      message: "Failed to save push token",
     });
 
   }
 };
+
+
 export const sendTestNotification = async (req, res) => {
   try {
     const courier = await Courier.findById(req.user.id);
