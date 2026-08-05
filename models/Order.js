@@ -36,10 +36,25 @@ const orderSchema = new mongoose.Schema(
   },
 },
 
+
+
     dropoffAddress: {
       type: String,
       required: true,
     },
+
+    dropoffLocation: {
+  type: {
+    type: String,
+    enum: ["Point"],
+    default: "Point",
+  },
+
+  coordinates: {
+    type: [Number], // [lng, lat]
+    default: [0, 0],
+  },
+},
 
     
 
@@ -89,6 +104,10 @@ expiresAt: {
 
 orderSchema.index({
   pickupLocation: "2dsphere",
+});
+
+orderSchema.index({
+  dropoffLocation: "2dsphere",
 });
 
 const Order = mongoose.model(
