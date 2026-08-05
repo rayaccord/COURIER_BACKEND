@@ -12,25 +12,29 @@ export const createOrder = async (
   res
 ) => {
   try {
-    const {
+const {
   customerName,
   restaurantName,
   pickupAddress,
   pickupLocation,
   dropoffAddress,
+  dropoffLocation,
   fee,
 } = req.body;
 
-    const order = await Order.create({
+const order = await Order.create({
   orderNumber: `ORD-${Date.now()}`,
   customerName,
   restaurantName,
+
   pickupAddress,
-  pickupLocation: req.body.pickupLocation,
+  pickupLocation,
+
   dropoffAddress,
+  dropoffLocation,
+
   fee,
 });
-
 
 const nearbyCouriers =
   await Courier.find({
@@ -796,4 +800,3 @@ async (req, res) => {
   }
 
 };
-
