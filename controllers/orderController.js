@@ -247,10 +247,10 @@ export const getPendingOrders = async (req, res) => {
         "arrived_restaurant",
         "picked_up",
         "on_the_way",
+        "arrived_customer",
       ],
     },
   });
-
   
 console.log(
   "Existing Active Order:",
@@ -357,14 +357,14 @@ if (existingActiveOrder) {
       }
 
       const allowedStatuses = [
-        "accepted",
-        "heading_to_restaurant",
-        "arrived_restaurant",
-        "picked_up",
-        "on_the_way",
-        "delivered",
-      ];
-
+  "accepted",
+  "heading_to_restaurant",
+  "arrived_restaurant",
+  "picked_up",
+  "on_the_way",
+  "arrived_customer",
+  "delivered",
+];
       if (
         !allowedStatuses.includes(
           status
@@ -520,6 +520,15 @@ res.status(200).json({
           message: "Order not found",
         });
       }
+
+      if (
+  !order.courier ||
+  order.courier.toString() !== req.user.id
+) {
+  return res.status(403).json({
+    message: "You are not assigned to this order",
+  });
+}
 
       order.status = "pending";
 order.courier = null;
