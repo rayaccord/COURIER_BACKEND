@@ -64,19 +64,20 @@ const orderSchema = new mongoose.Schema(
     },
 
     status: {
-      type: String,
-      enum: [
-        "pending",
-        "accepted",
-        "heading_to_restaurant",
-        "arrived_restaurant",
-        "picked_up",
-        "on_the_way",
-        "delivered",
-        "cancelled",
-      ],
-      default: "pending",
-    },
+  type: String,
+  enum: [
+    "pending",
+    "accepted",
+    "heading_to_restaurant",
+    "arrived_restaurant",
+    "picked_up",
+    "on_the_way",
+    "arrived_customer",
+    "delivered",
+    "cancelled",
+  ],
+  default: "pending",
+},
 
     courier: {
       type: mongoose.Schema.Types.ObjectId,
