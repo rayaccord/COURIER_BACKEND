@@ -365,18 +365,271 @@ if (existingActiveOrder) {
   "arrived_customer",
   "delivered",
 ];
-      if (
-        !allowedStatuses.includes(
-          status
-        )
-      ) {
-        return res
-          .status(400)
-          .json({
-            message:
-              "Invalid status",
-          });
-      }
+
+if (!allowedStatuses.includes(status)) {
+  return res.status(400).json({
+    message: "Invalid status",
+  });
+}
+
+
+/*
+ * ==========================================
+ * STRICT DELIVERY STATUS PROGRESSION
+ * ==========================================
+ */
+
+const nextStatus = {
+  accepted: "heading_to_restaurant",
+
+  heading_to_restaurant:
+    "arrived_restaurant",
+
+  arrived_restaurant:
+    "picked_up",
+
+  picked_up:
+    "on_the_way",
+
+  on_the_way:
+    "arrived_customer",
+
+  arrived_customer:
+    "delivered",
+};
+
+
+/*
+ * ==========================================
+ * STRICT DELIVERY STATUS PROGRESSION
+ * ==========================================
+ */
+
+// Only allow the immediate next status
+if (
+  nextStatus[order.status] !== status
+) {
+
+  return res.status(400).json({
+    message:
+      `You cannot change the delivery from "${order.status}" to "${status}". You must complete the current delivery step first.`,
+  });
+
+}
+
+
+/*
+ * ==========================================
+ * COURIER LOCATION VERIFICATION
+ * ==========================================
+ */
+
+const courier = await Courier.findById(
+  req.user.id
+);
+
+if (!courier) {
+
+  return res.status(404).json({
+    message: "Courier not found",
+  });
+
+}
+
+
+// Make sure courier has a valid GPS location
+if (
+  !courier.location ||
+  !courier.location.coordinates ||
+  courier.location.coordinates.length !== 2
+) {
+
+  return res.status(400).json({
+    message:
+      "Your current location is unavailable. Please enable location services and try again.",
+  });
+
+}
+
+
+const [
+  courierLng,
+  courierLat,
+] = courier.location.coordinates;
+
+
+/*
+ * Calculate distance between courier
+ * and destination.
+ */
+const calculateDistance = (
+  lat1,
+  lng1,
+  lat2,
+  lng2
+) => {
+
+  const R = 6371e3;
+
+  const φ1 =
+    (lat1 * Math.PI) / 180;
+
+  const φ2 =
+    (lat2 * Math.PI) / 180;
+
+  const Δφ =
+    ((lat2 - lat1) * Math.PI) / 180;
+
+  const Δλ =
+    ((lng2 - lng1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(Δφ / 2) ** 2 +
+    Math.cos(φ1) *
+      Math.cos(φ2) *
+      Math.sin(Δλ / 2) ** 2;
+
+  return (
+    R *
+    2 *
+    Math.atan2(
+      Math.sqrt(a),
+      Math.sqrt(1 - a)
+    )
+  );
+};
+
+
+/*
+ * Restaurant GPS coordinates
+ */
+const pickupCoordinates =
+  order.pickupLocation?.coordinates;
+
+
+/*
+ * Customer GPS coordinates
+ */
+const dropoffCoordinates =
+  order.dropoffLocation?.coordinates;
+
+
+/*
+ * ==========================================
+ * MUST BE AT RESTAURANT
+ * ==========================================
+ */
+
+if (
+  status === "arrived_restaurant" ||
+  status === "picked_up"
+) {
+
+  if (
+    !pickupCoordinates ||
+    pickupCoordinates.length !== 2
+  ) {
+
+    return res.status(400).json({
+      message:
+        "Restaurant location is unavailable.",
+    });
+
+  }
+
+  const [
+    pickupLng,
+    pickupLat,
+  ] = pickupCoordinates;
+
+  const distanceToRestaurant =
+    calculateDistance(
+      courierLat,
+      courierLng,
+      pickupLat,
+      pickupLng
+    );
+
+
+  console.log(
+    "Distance to restaurant:",
+    distanceToRestaurant,
+    "meters"
+  );
+
+
+  // Courier must be within 100 meters
+  if (distanceToRestaurant > 100) {
+
+    return res.status(400).json({
+      message:
+        "You must be at the restaurant before continuing.",
+      distance:
+        Math.round(distanceToRestaurant),
+    });
+
+  }
+
+}
+
+
+/*
+ * ==========================================
+ * MUST BE AT CUSTOMER
+ * ==========================================
+ */
+
+if (
+  status === "arrived_customer" ||
+  status === "delivered"
+) {
+
+  if (
+    !dropoffCoordinates ||
+    dropoffCoordinates.length !== 2
+  ) {
+
+    return res.status(400).json({
+      message:
+        "Customer location is unavailable.",
+    });
+
+  }
+
+  const [
+    dropoffLng,
+    dropoffLat,
+  ] = dropoffCoordinates;
+
+  const distanceToCustomer =
+    calculateDistance(
+      courierLat,
+      courierLng,
+      dropoffLat,
+      dropoffLng
+    );
+
+
+  console.log(
+    "Distance to customer:",
+    distanceToCustomer,
+    "meters"
+  );
+
+
+  // Courier must be within 100 meters
+  if (distanceToCustomer > 100) {
+
+    return res.status(400).json({
+      message:
+        "You must be at the customer address before continuing.",
+      distance:
+        Math.round(distanceToCustomer),
+    });
+
+  }
+
+}
 
       // Prevent duplicate delivery payment
 const alreadyDelivered =
@@ -392,39 +645,41 @@ if (
   status === "delivered" &&
   !alreadyDelivered
 ) {
-  const courier =
+
+  const courierForPayment =
     await Courier.findById(
       order.courier
     );
+    
+if (courierForPayment) {
 
-  if (courier) {
+  courierForPayment.completedOrders += 1;
 
-    courier.completedOrders += 1;
+  courierForPayment.wallet.available +=
+    order.fee;
 
-    courier.wallet.available +=
-      order.fee;
+  courierForPayment.wallet.today +=
+    order.fee;
 
-    courier.wallet.today +=
-      order.fee;
+  courierForPayment.wallet.weekly +=
+    order.fee;
 
-    courier.wallet.weekly +=
-      order.fee;
+  courierForPayment.wallet.monthly +=
+    order.fee;
 
-    courier.wallet.monthly +=
-      order.fee;
+  courierForPayment.wallet.totalEarned +=
+    order.fee;
 
-    courier.wallet.totalEarned +=
-      order.fee;
+  courierForPayment.transactions.unshift({
+    type: "delivery",
+    amount: order.fee,
+    status: "Completed",
+    date: new Date(),
+  });
 
-    courier.transactions.unshift({
-      type: "delivery",
-      amount: order.fee,
-      status: "Completed",
-      date: new Date(),
-    });
+  await courierForPayment.save();
 
-    await courier.save();
-  }
+}
 }
 
 res.status(200).json({
