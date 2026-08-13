@@ -1,5 +1,6 @@
 import Order from "../models/Order.js";
 import Courier from "../models/Courier.js";
+import Transaction from "../models/Transaction.js";
 import {
   io,
   connectedCouriers,
@@ -641,45 +642,48 @@ order.status =
 await order.save();
 
 /* PAY COURIER WHEN ORDER IS DELIVERED */
+
 if (
   status === "delivered" &&
   !alreadyDelivered
 ) {
+  const courierForPayment = await Courier.findById(
+    order.courier
+  );
 
-  const courierForPayment =
-    await Courier.findById(
-      order.courier
-    );
-    
-if (courierForPayment) {
+  if (courierForPayment) {
+    const earning = Number(order.fee || 0);
 
-  courierForPayment.completedOrders += 1;
+    const balanceBefore =
+      courierForPayment.wallet.available;
 
-  courierForPayment.wallet.available +=
-    order.fee;
+    courierForPayment.wallet.available += earning;
 
-  courierForPayment.wallet.today +=
-    order.fee;
+    courierForPayment.wallet.today += earning;
 
-  courierForPayment.wallet.weekly +=
-    order.fee;
+    courierForPayment.wallet.weekly += earning;
 
-  courierForPayment.wallet.monthly +=
-    order.fee;
+    courierForPayment.wallet.monthly += earning;
 
-  courierForPayment.wallet.totalEarned +=
-    order.fee;
+    courierForPayment.wallet.totalEarned += earning;
 
-  courierForPayment.transactions.unshift({
-    type: "delivery",
-    amount: order.fee,
-    status: "Completed",
-    date: new Date(),
-  });
+    courierForPayment.completedOrders += 1;
 
-  await courierForPayment.save();
+    await courierForPayment.save();
 
-}
+    await Transaction.create({
+      walletId: courierForPayment._id,
+      courier: courierForPayment._id,
+      type: "earning",
+      amount: earning,
+      balanceBefore,
+      balanceAfter:
+        courierForPayment.wallet.available,
+      reference: `EARNING-${order._id}`,
+      orderId: order._id,
+      status: "completed",
+    });
+  }
 }
 
 res.status(200).json({
