@@ -5,7 +5,6 @@ import {
   getWallet,
   updateBankAccount,
   withdrawFunds,
-  addDeliveryEarning,
 } from "../controllers/walletController.js";
 
 const router = express.Router();
@@ -28,10 +27,6 @@ router.post(
   withdrawFunds
 );
 
-router.post(
-  "/earning",
-  authMiddleware,
-  addDeliveryEarning
-);
+
 
 export default router;
