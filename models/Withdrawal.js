@@ -11,6 +11,7 @@ const withdrawalSchema = new mongoose.Schema(
     amount: {
       type: Number,
       required: true,
+      min: 1,
     },
 
     bankName: {
@@ -28,15 +29,42 @@ const withdrawalSchema = new mongoose.Schema(
       required: true,
     },
 
+    bankCode: {
+      type: String,
+      default: "",
+    },
+
     status: {
       type: String,
       enum: [
         "pending",
         "approved",
+        "processing",
+        "successful",
+        "failed",
         "rejected",
-        "paid",
       ],
       default: "pending",
+    },
+
+    paystackReference: {
+      type: String,
+      default: "",
+    },
+
+    rejectionReason: {
+      type: String,
+      default: "",
+    },
+
+    failureReason: {
+      type: String,
+      default: "",
+    },
+
+    approvedAt: {
+      type: Date,
+      default: null,
     },
 
     paidAt: {
