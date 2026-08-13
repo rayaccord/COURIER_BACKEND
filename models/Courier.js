@@ -2,6 +2,13 @@ import mongoose from "mongoose";
 
 const courierSchema = new mongoose.Schema(
   {
+    externalIds: {
+  hooks: {
+    type: String,
+    default: "",
+    index: true,
+  },
+},
     email: {
       type: String,
       required: true,
@@ -174,32 +181,7 @@ bankAccount: {
   },
 },
 
-transactions: [
-  {
-    type: {
-      type: String,
-      enum: [
-        "delivery",
-        "withdrawal",
-      ],
-    },
 
-    amount: {
-      type: Number,
-      default: 0,
-    },
-
-    status: {
-      type: String,
-      default: "Completed",
-    },
-
-    date: {
-      type: Date,
-      default: Date.now,
-    },
-  },
-],
 
     online: {
   type: Boolean,
