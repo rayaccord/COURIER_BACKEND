@@ -20,8 +20,10 @@ export const getProfile = async (req, res) => {
   city: courier.city,
 
   vehicleRegistration: courier.vehicleRegistration,
-  governmentId: courier.governmentId,
-  address: courier.address,
+  governmentIdType: courier.governmentIdType,
+governmentIdFront: courier.governmentIdFront,
+governmentIdBack: courier.governmentIdBack,
+address: courier.homeAddress,
 
   referralCode: courier.referralCode,
   referralBalance: courier.referralBalance,
@@ -52,9 +54,8 @@ const {
   phone,
   vehicle,
   city,
-
   vehicleRegistration,
-  governmentId,
+  governmentIdType,
   address,
 } = req.body;
 
@@ -82,13 +83,13 @@ const {
   vehicleRegistration ??
   courier.vehicleRegistration;
 
-courier.governmentId =
-  governmentId ??
-  courier.governmentId;
+courier.governmentIdType =
+  governmentIdType ??
+  courier.governmentIdType;
 
-courier.address =
+courier.homeAddress =
   address ??
-  courier.address;
+  courier.homeAddress;
 
     await courier.save();
 
