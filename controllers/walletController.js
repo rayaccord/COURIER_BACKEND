@@ -1,5 +1,6 @@
 import Courier from "../models/Courier.js";
 import Withdrawal from "../models/Withdrawal.js";
+import Transaction from "../models/Transaction.js";
 
 /* GET WALLET */
 export const getWallet = async (req, res) => {
@@ -12,13 +13,27 @@ export const getWallet = async (req, res) => {
       });
     }
 
+    const transactions = await Transaction.find({
+      courier: courier._id,
+    })
+      .sort({ createdAt: -1 })
+      .limit(100);
+
+    const withdrawals = await Withdrawal.find({
+      courier: courier._id,
+    })
+      .sort({ createdAt: -1 })
+      .limit(100);
+
     res.status(200).json({
       wallet: courier.wallet,
       bankAccount: courier.bankAccount,
-      transactions: courier.transactions,
+      transactions,
+      withdrawals,
     });
-
   } catch (error) {
+    console.error("GET WALLET ERROR:", error);
+
     res.status(500).json({
       message: "Server Error",
     });
@@ -70,16 +85,11 @@ export const updateBankAccount = async (
 
 
 /* WITHDRAW FUNDS */
-export const withdrawFunds = async (
-  req,
-  res
-) => {
+export const withdrawFunds = async (req, res) => {
   try {
     const { amount } = req.body;
 
-    const courier = await Courier.findById(
-      req.user.id
-    );
+    const courier = await Courier.findById(req.user.id);
 
     if (!courier) {
       return res.status(404).json({
@@ -87,76 +97,65 @@ export const withdrawFunds = async (
       });
     }
 
-    // Check bank account exists
-    if (
-      !courier.bankAccount?.accountNumber
-    ) {
+    if (!courier.bankAccount?.accountNumber) {
       return res.status(400).json({
-        message:
-          "Please add a payment account first",
+        message: "Please add a payment account first",
       });
     }
 
-    // Check amount is valid
+    const withdrawalAmount = Number(amount);
+
     if (
-      !amount ||
-      Number(amount) <= 0
+      !Number.isFinite(withdrawalAmount) ||
+      withdrawalAmount <= 0
     ) {
       return res.status(400).json({
         message: "Invalid amount",
       });
     }
 
-    // Check balance
-    if (
-      Number(amount) >
-      courier.wallet.available
-    ) {
+    if (withdrawalAmount > courier.wallet.available) {
       return res.status(400).json({
-        message:
-          "Insufficient balance",
+        message: "Insufficient balance",
       });
     }
 
-// Create withdrawal request
-await Withdrawal.create({
-  courier: courier._id,
+    const balanceBefore = courier.wallet.available;
 
-  amount: Number(amount),
-
-  bankName:
-    courier.bankAccount.bankName,
-
-  accountName:
-    courier.bankAccount.accountName,
-
-  accountNumber:
-    courier.bankAccount.accountNumber,
-
-  status: "pending",
-});
-
-// Move funds to pending
-courier.wallet.pending +=
-  Number(amount);
-
-// Record pending transaction
-courier.transactions.unshift({
-  type: "withdrawal",
-  amount: Number(amount),
-  status: "Pending",
-  date: new Date(),
-});
-
-await courier.save();
-
-    res.status(200).json({
-      message:
-        "Withdrawal request submitted",
-      wallet: courier.wallet,
+    const withdrawal = await Withdrawal.create({
+      courier: courier._id,
+      amount: withdrawalAmount,
+      bankName: courier.bankAccount.bankName,
+      accountName: courier.bankAccount.accountName,
+      accountNumber: courier.bankAccount.accountNumber,
+      status: "pending",
     });
 
+    courier.wallet.available -= withdrawalAmount;
+    courier.wallet.pending += withdrawalAmount;
+
+    await courier.save();
+
+    await Transaction.create({
+      walletId: courier._id,
+      courier: courier._id,
+      type: "withdrawal",
+      amount: withdrawalAmount,
+      balanceBefore,
+      balanceAfter: courier.wallet.available,
+      reference: `WD-${withdrawal._id}`,
+      withdrawalId: withdrawal._id,
+      status: "pending",
+    });
+
+    res.status(200).json({
+      message: "Withdrawal request submitted",
+      withdrawal,
+      wallet: courier.wallet,
+    });
   } catch (error) {
+    console.error("WITHDRAW ERROR:", error);
+
     res.status(500).json({
       message: "Server Error",
     });
