@@ -781,8 +781,9 @@ res.status(200).json({
       }
 
       if (
-  !order.courier ||
-  order.courier.toString() !== req.user.id
+  !order.assignedCouriers.some(
+    (id) => id.toString() === req.user.id
+  )
 ) {
   return res.status(403).json({
     message: "You are not assigned to this order",
