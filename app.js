@@ -8,6 +8,7 @@ import authRoutes from "./routes/authRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import walletRoutes from "./routes/walletRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
+import deliveryRoutes from "./routes/deliveryRoutes.js";
 import courierRoutes from "./routes/courierRoutes.js";
 import surgeRoutes from "./routes/surgeRoutes.js";
 
@@ -33,6 +34,11 @@ app.use(
 app.use(
   "/api/orders",
   orderRoutes
+);
+
+app.use(
+  "/api/deliveries",
+  deliveryRoutes
 );
 
 app.use(
