@@ -1,6 +1,7 @@
 import Order from "../models/Order.js";
 import Courier from "../models/Courier.js";
 import Transaction from "../models/Transaction.js";
+import { notifyHooks } from "../services/hooksIntegration.js";
 import {
   io,
   connectedCouriers,
@@ -297,6 +298,15 @@ if (existingActiveOrder) {
         req.user.id;
 
       await order.save();
+
+      const acceptedCourier =
+  await Courier.findById(req.user.id);
+
+await notifyHooks({
+  event: "delivery.accepted",
+  order,
+  courier: acceptedCourier,
+});
 
       for (const courierId of order.assignedCouriers) {
 
@@ -641,6 +651,27 @@ order.status =
 
 await order.save();
 
+const statusCourier =
+  await Courier.findById(req.user.id);
+
+const hooksEventMap = {
+  picked_up: "delivery.picked_up",
+  on_the_way: "delivery.in_transit",
+  arrived_customer: "delivery.arrived",
+  delivered: "delivery.delivered",
+};
+
+const hooksEvent =
+  hooksEventMap[status];
+
+if (hooksEvent) {
+  await notifyHooks({
+    event: hooksEvent,
+    order,
+    courier: statusCourier,
+  });
+}
+
 /* PAY COURIER WHEN ORDER IS DELIVERED */
 
 if (
@@ -900,6 +931,17 @@ order.status =
 order.expiresAt = null;
 
 await order.save();
+
+const cancellationCourier =
+  order.courier
+    ? await Courier.findById(order.courier)
+    : null;
+
+await notifyHooks({
+  event: "delivery.cancelled",
+  order,
+  courier: cancellationCourier,
+});
 
 if (order.courier) {
 
