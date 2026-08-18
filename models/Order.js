@@ -8,10 +8,34 @@ const orderSchema = new mongoose.Schema(
       unique: true,
     },
 
+    hooksOrderId: {
+  type: String,
+  required: true,
+  unique: true,
+  index: true,
+},
+
+hooksUserId: {
+  type: String,
+  default: "",
+  index: true,
+},
+
+hooksRestaurantId: {
+  type: String,
+  default: "",
+  index: true,
+},
+
     customerName: {
       type: String,
       required: true,
     },
+
+    customerPhone: {
+  type: String,
+  default: "",
+},
 
     restaurantName: {
       type: String,
