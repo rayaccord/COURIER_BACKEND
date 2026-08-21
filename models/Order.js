@@ -8,7 +8,11 @@ const orderSchema = new mongoose.Schema(
       unique: true,
     },
 
-    hooksOrderId: {
+    // ============================================================
+// HOOKS ORDER REFERENCES
+// ============================================================
+
+hooksOrderId: {
   type: String,
   required: true,
   unique: true,
@@ -27,6 +31,30 @@ hooksRestaurantId: {
   index: true,
 },
 
+hooksPharmacyId: {
+  type: String,
+  default: "",
+  index: true,
+},
+
+hooksStoreId: {
+  type: String,
+  default: "",
+  index: true,
+},
+
+hooksEntityType: {
+  type: String,
+  default: "",
+  index: true,
+},
+
+hooksEntityId: {
+  type: String,
+  default: "",
+  index: true,
+},
+
     customerName: {
       type: String,
       required: true,
@@ -38,10 +66,31 @@ hooksRestaurantId: {
 },
 
     restaurantName: {
-      type: String,
-      required: true,
-    },
+  type: String,
+  default: "",
+},
 
+pharmacyName: {
+  type: String,
+  default: "",
+},
+
+storeName: {
+  type: String,
+  default: "",
+},
+
+sourceType: {
+  type: String,
+  enum: [
+    "restaurant",
+    "pharmacy",
+    "store",
+    "other",
+  ],
+  default: "restaurant",
+  index: true,
+},
     pickupAddress: {
       type: String,
       required: true,
