@@ -1,47 +1,60 @@
 import Courier from "../models/Courier.js";
-export const updateLocation =
-  async (req, res) => {
+export const updateLocation = async (req, res) => {
+  try {
+    const {
+      lat,
+      lng,
+      heading,
+      speed,
+    } = req.body;
 
-    try {
+    if (
+      typeof lat !== "number" ||
+      typeof lng !== "number"
+    ) {
+      return res.status(400).json({
+        message: "Valid latitude and longitude are required",
+      });
+    }
 
-      const {
+    const courier = await Courier.findById(req.user.id);
+
+    if (!courier) {
+      return res.status(404).json({
+        message: "Courier not found",
+      });
+    }
+
+    courier.location = {
+      type: "Point",
+      coordinates: [lng, lat],
+      lastUpdated: new Date(),
+    };
+
+    await courier.save();
+
+    res.status(200).json({
+      message: "Location updated",
+      location: {
         lat,
         lng,
-      } = req.body;
+        heading: heading ?? 0,
+        speed: speed ?? 0,
+        lastUpdated: courier.location.lastUpdated,
+      },
+    });
 
-      const courier =
-        await Courier.findById(
-          req.user.id
-        );
+  } catch (error) {
+    console.error(
+      "Failed to update courier location:",
+      error
+    );
 
-      if (!courier) {
-        return res.status(404).json({
-          message:
-            "Courier not found",
-        });
-      }
-
-      courier.location = {
-  type: "Point",
-  coordinates: [lng, lat],
+    res.status(500).json({
+      message: "Failed to update location",
+    });
+  }
 };
-
-      await courier.save();
-
-      res.status(200).json({
-        message:
-          "Location updated",
-      });
-
-    } catch (error) {
-
-      res.status(500).json({
-        message:
-          "Failed to update location",
-      });
-
-    }
-  };
 
 
 
