@@ -192,18 +192,23 @@ expoPushToken: {
   type: String,
   default: "",
 },
-    location: {
-      type: {
-        type: String,
-        enum: ["Point"],
-        default: "Point",
-      },
+location: {
+  type: {
+    type: String,
+    enum: ["Point"],
+    default: "Point",
+  },
 
-      coordinates: {
-        type: [Number], // [lng, lat]
-        default: [0, 0],
-      },
-    },
+  coordinates: {
+    type: [Number], // [lng, lat]
+    default: [0, 0],
+  },
+
+  lastUpdated: {
+    type: Date,
+    default: null,
+  },
+},
   },
   {
     timestamps: true,
