@@ -1,4 +1,5 @@
 import express from "express";
+import apiKeyMiddleware from "../middleware/apiKeyMiddleware.js";
 
 import {
   createDelivery,
@@ -8,6 +9,7 @@ const router = express.Router();
 
 router.post(
   "/",
+  apiKeyMiddleware,
   createDelivery
 );
 

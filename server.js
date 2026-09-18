@@ -6,10 +6,8 @@ import app from "./app.js";
 import connectDB from "./config/db.js";
 import "./config/firebaseAdmin.js";
 
-const result = dotenv.config();
+dotenv.config();
 
-console.log("dotenv result:", result);
-console.log("RESEND_API_KEY from server:", process.env.RESEND_API_KEY);
 connectDB();
 
 const server = http.createServer(app);

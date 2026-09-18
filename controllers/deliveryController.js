@@ -75,6 +75,7 @@ export const createDelivery = async (req, res) => {
     if (existingOrder) {
       return res.status(200).json({
         message: "Delivery already exists",
+        delivery: existingOrder,
         order: existingOrder,
       });
     }

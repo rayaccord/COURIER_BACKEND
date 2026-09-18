@@ -1,7 +1,11 @@
 import Order from "../models/Order.js";
 import Courier from "../models/Courier.js";
 import Transaction from "../models/Transaction.js";
-import { notifyHooks } from "../services/hooksIntegration.js";
+import {
+  notifyHooks,
+  notifyOrderRejected,
+  notifyOrderFailed,
+} from "../services/hooksIntegration.js";
 import {
   io,
   connectedCouriers,
@@ -375,11 +379,69 @@ await notifyHooks({
   "on_the_way",
   "arrived_customer",
   "delivered",
+  "failed",
 ];
 
 if (!allowedStatuses.includes(status)) {
   return res.status(400).json({
     message: "Invalid status",
+  });
+}
+
+if (
+  !order.courier ||
+  order.courier.toString() !== req.user.id
+) {
+  return res.status(403).json({
+    message: "You are not assigned to this order",
+  });
+}
+
+if (status === "failed") {
+
+  const terminalStatuses = [
+    "delivered",
+    "cancelled",
+    "failed",
+  ];
+
+  if (terminalStatuses.includes(order.status)) {
+    return res.status(400).json({
+      message: "Delivery is already closed",
+    });
+  }
+
+  if (
+    !order.courier ||
+    order.courier.toString() !== req.user.id
+  ) {
+    return res.status(403).json({
+      message: "You are not assigned to this order",
+    });
+  }
+
+  order.status = "failed";
+
+  await order.save();
+
+  const failedCourier =
+    await Courier.findById(req.user.id);
+
+  try {
+    await notifyOrderFailed(
+      order,
+      failedCourier
+    );
+  } catch (error) {
+    console.error(
+      "Failed to notify Hooks:",
+      error.message
+    );
+  }
+
+  return res.status(200).json({
+    message: "Delivery marked as failed",
+    order,
   });
 }
 
@@ -655,6 +717,8 @@ const statusCourier =
   await Courier.findById(req.user.id);
 
 const hooksEventMap = {
+  heading_to_restaurant: "delivery.heading_to_restaurant",
+  arrived_restaurant: "delivery.arrived_restaurant",
   picked_up: "delivery.picked_up",
   on_the_way: "delivery.in_transit",
   arrived_customer: "delivery.arrived",
@@ -743,6 +807,7 @@ res.status(200).json({
       $nin: [
         "delivered",
         "cancelled",
+        "failed",
       ],
     },
   });
@@ -821,6 +886,30 @@ res.status(200).json({
   });
 }
 
+      if (
+        order.courier &&
+        order.courier.toString() !== req.user.id
+      ) {
+        return res.status(403).json({
+          message:
+            "Another courier is assigned to this order",
+        });
+      }
+
+      const rejectableStatuses = [
+        "pending",
+        "accepted",
+        "heading_to_restaurant",
+        "arrived_restaurant",
+      ];
+
+      if (!rejectableStatuses.includes(order.status)) {
+        return res.status(400).json({
+          message:
+            "The order cannot be rejected after pickup",
+        });
+      }
+
       order.status = "pending";
 order.courier = null;
 
@@ -831,6 +920,21 @@ order.assignedCouriers =
   );
 
 await order.save();
+
+const rejectingCourier =
+  await Courier.findById(req.user.id);
+
+try {
+  await notifyOrderRejected(
+    order,
+    rejectingCourier
+  );
+} catch (error) {
+  console.error(
+    "Failed to notify Hooks:",
+    error.message
+  );
+}
 
       res.status(200).json({
         message:
@@ -922,6 +1026,16 @@ await order.save();
         return res.status(400).json({
           message:
             "Delivered orders cannot be cancelled",
+        });
+      }
+
+      if (
+        !order.courier ||
+        order.courier.toString() !== req.user.id
+      ) {
+        return res.status(403).json({
+          message:
+            "You are not assigned to this order",
         });
       }
 

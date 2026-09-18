@@ -148,6 +148,7 @@ sourceType: {
     "arrived_customer",
     "delivered",
     "cancelled",
+    "failed",
   ],
   default: "pending",
 },
