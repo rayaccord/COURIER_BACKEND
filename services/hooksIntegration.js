@@ -388,11 +388,11 @@ export const syncCourierToHooks =
           : "offline",
 
       vehicle_type:
-        courier.vehicleType ||
+        courier.vehicle ||
         null,
 
       vehicle_number:
-        courier.vehicleNumber ||
+        courier.vehicleRegistration ||
         null,
 
       current_latitude:
@@ -538,6 +538,34 @@ export const notifyOrderCancelled =
     return notifyHooks({
       event:
         "delivery.cancelled",
+
+      order,
+
+      courier,
+    });
+  };
+
+
+export const notifyOrderRejected =
+  async (order, courier) => {
+
+    return notifyHooks({
+      event:
+        "delivery.rejected",
+
+      order,
+
+      courier,
+    });
+  };
+
+
+export const notifyOrderFailed =
+  async (order, courier) => {
+
+    return notifyHooks({
+      event:
+        "delivery.failed",
 
       order,
 
