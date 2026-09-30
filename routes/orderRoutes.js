@@ -2,7 +2,6 @@ import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
 
 import {
-  createOrder,
   getPendingOrders,
   acceptOrder,
   updateOrderStatus,
@@ -16,11 +15,6 @@ import {
 } from "../controllers/orderController.js";
 
 const router = express.Router();
-
-router.post(
-  "/",
-  createOrder
-);
 
 router.get(
   "/pending",

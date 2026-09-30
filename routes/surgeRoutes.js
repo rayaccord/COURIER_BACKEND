@@ -1,4 +1,5 @@
 import express from "express";
+import platformAuth from "../middleware/platformAuth.js";
 
 import {
   getSurgeZones,
@@ -11,6 +12,6 @@ const router = express.Router();
 router.get("/", getSurgeZones);
 
 /* Create a new surge zone */
-router.post("/", createSurgeZone);
+router.post("/", platformAuth, createSurgeZone);
 
 export default router;

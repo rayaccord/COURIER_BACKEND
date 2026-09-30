@@ -3,7 +3,6 @@ import path from "path";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
-import testRoutes from "./routes/testRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import walletRoutes from "./routes/walletRoutes.js";
@@ -11,11 +10,13 @@ import orderRoutes from "./routes/orderRoutes.js";
 import deliveryRoutes from "./routes/deliveryRoutes.js";
 import courierRoutes from "./routes/courierRoutes.js";
 import surgeRoutes from "./routes/surgeRoutes.js";
+import v1Routes from "./routes/v1Routes.js";
+import corsOrigins from "./config/cors.js";
 
 
 const app = express();
 
-app.use(cors());
+app.use(cors({ origin: corsOrigins }));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -24,7 +25,6 @@ app.get("/", (req, res) => {
 });
 
 /* ROUTES */
-app.use("/api", testRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use(
@@ -50,6 +50,11 @@ app.use(
 app.use(
   "/api/surge",
   surgeRoutes
+);
+
+app.use(
+  "/api/v1",
+  v1Routes
 );
 
 app.use(

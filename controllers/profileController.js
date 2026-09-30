@@ -1,3 +1,5 @@
+import { saveCourierLocation } from "../services/courierLocation.js";
+import { isCoordinate } from "../services/geo.js";
 import Courier from "../models/Courier.js";
 import { getMessaging } from "firebase-admin/messaging";
 
@@ -120,11 +122,18 @@ export const updateLocation =
         lng,
       } = req.body;
 
-      
+      if (!isCoordinate(lat, lng)) {
+        return res.status(400).json({
+          message:
+            "Valid latitude and longitude are required",
+        });
+      }
 
       const courier =
-        await Courier.findById(
-          req.user.id
+        await saveCourierLocation(
+          req.user.id,
+          lat,
+          lng
         );
 
       if (!courier) {
@@ -133,16 +142,6 @@ export const updateLocation =
             "Courier not found",
         });
       }
-
-      courier.location = {
-        type: "Point",
-        coordinates: [
-          lng,
-          lat,
-        ],
-      };
-
-      await courier.save();
 
       res.status(200).json({
         message:

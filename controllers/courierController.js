@@ -1,4 +1,6 @@
 import Courier from "../models/Courier.js";
+import { saveCourierLocation } from "../services/courierLocation.js";
+import { isCoordinate } from "../services/geo.js";
 export const updateLocation = async (req, res) => {
   try {
     const {
@@ -8,30 +10,23 @@ export const updateLocation = async (req, res) => {
       speed,
     } = req.body;
 
-    if (
-      typeof lat !== "number" ||
-      typeof lng !== "number"
-    ) {
+    if (!isCoordinate(lat, lng)) {
       return res.status(400).json({
         message: "Valid latitude and longitude are required",
       });
     }
 
-    const courier = await Courier.findById(req.user.id);
+    const courier = await saveCourierLocation(
+      req.user.id,
+      lat,
+      lng
+    );
 
     if (!courier) {
       return res.status(404).json({
         message: "Courier not found",
       });
     }
-
-    courier.location = {
-      type: "Point",
-      coordinates: [lng, lat],
-      lastUpdated: new Date(),
-    };
-
-    await courier.save();
 
     res.status(200).json({
       message: "Location updated",

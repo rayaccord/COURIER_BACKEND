@@ -78,10 +78,6 @@ if (existingPending) {
     /* GENERATE OTP */
     const verificationCode = generateCode();
 
-    console.log(
-  "Verification Code:",
-  verificationCode
-);
 
     /* CREATE COURIER */
 /* SAVE TEMPORARY COURIER */
@@ -488,13 +484,29 @@ export const verifyResetCode = async (req, res) => {
 /* ================= RESET PASSWORD ================= */
 export const resetPassword = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, code, password } = req.body;
+
+    if (
+      typeof password !== "string" ||
+      password.length < 8
+    ) {
+      return res.status(400).json({
+        message: "Password must be at least 8 characters long",
+      });
+    }
 
     const courier = await Courier.findOne({ email });
 
-    if (!courier) {
-      return res.status(404).json({
-        message: "Courier not found",
+    if (
+      !courier ||
+      !code ||
+      !courier.resetPasswordCode ||
+      courier.resetPasswordCode !== String(code) ||
+      !courier.resetPasswordCodeExpires ||
+      courier.resetPasswordCodeExpires < Date.now()
+    ) {
+      return res.status(400).json({
+        message: "Invalid or expired reset code",
       });
     }
 
@@ -557,10 +569,6 @@ export const resendVerificationCode =
 
       await pendingCourier.save();
 
-      console.log(
-        "Verification Code:",
-        verificationCode
-      );
 
       await sendEmail(
         email,

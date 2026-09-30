@@ -1,100 +1,28 @@
 import dotenv from "dotenv";
 import http from "http";
-import { Server } from "socket.io";
-
-import app from "./app.js";
-import connectDB from "./config/db.js";
-import "./config/firebaseAdmin.js";
 
 dotenv.config();
 
-connectDB();
+const { default: app } = await import("./app.js");
+const { default: connectDB } = await import("./config/db.js");
+const { initSocket } = await import("./sockets/socketServer.js");
+const { runStartup } = await import("./services/startup.js");
+const { startOutboxWorker } = await import("./services/deliveryEvents.js");
+const { startDispatchWorker } = await import("./services/dispatch.js");
+
+await import("./config/firebaseAdmin.js");
+
+await connectDB();
+
+await runStartup();
 
 const server = http.createServer(app);
 
-export const io = new Server(
-  server,
-  {
-    cors: {
-      origin: "*",
-      methods: [
-        "GET",
-        "POST",
-        "PUT",
-        "DELETE",
-      ],
-    },
-  }
-);
+initSocket(server);
 
-export const connectedCouriers =
-  new Map();
+startOutboxWorker();
 
-io.on(
-  "connection",
-  (socket) => {
-
-    console.log(
-      "Courier Connected:",
-      socket.id
-    );
-
-    socket.on(
-  "register-courier",
-  (courierId) => {
-
-    console.log(
-      "REGISTER EVENT RECEIVED:",
-      courierId
-    );
-
-    connectedCouriers.set(
-      courierId,
-      socket.id
-    );
-
-    console.log(
-      "Registered Courier:",
-      courierId
-    );
-
-    console.log(
-      "Connected Couriers Map:",
-      [...connectedCouriers.entries()]
-    );
-  }
-);
-
-    socket.on(
-      "disconnect",
-      () => {
-
-        for (const [
-          courierId,
-          socketId,
-        ] of connectedCouriers.entries()) {
-
-          if (
-            socketId === socket.id
-          ) {
-
-            connectedCouriers.delete(
-              courierId
-            );
-
-            break;
-          }
-        }
-
-        console.log(
-          "Courier Disconnected:",
-          socket.id
-        );
-      }
-    );
-  }
-);
-
+startDispatchWorker();
 
 const PORT =
   process.env.PORT || 5000;

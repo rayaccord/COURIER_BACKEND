@@ -8,52 +8,33 @@ const orderSchema = new mongoose.Schema(
       unique: true,
     },
 
-    // ============================================================
-// HOOKS ORDER REFERENCES
-// ============================================================
+    platform: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Platform",
+      default: null,
+      index: true,
+    },
 
-hooksOrderId: {
-  type: String,
-  required: true,
-  unique: true,
-  index: true,
-},
+    externalOrderId: {
+      type: String,
+      default: null,
+    },
 
-hooksUserId: {
-  type: String,
-  default: "",
-  index: true,
-},
+    externalReference: {
+      type: String,
+      default: "",
+    },
 
-hooksRestaurantId: {
-  type: String,
-  default: "",
-  index: true,
-},
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
 
-hooksPharmacyId: {
-  type: String,
-  default: "",
-  index: true,
-},
-
-hooksStoreId: {
-  type: String,
-  default: "",
-  index: true,
-},
-
-hooksEntityType: {
-  type: String,
-  default: "",
-  index: true,
-},
-
-hooksEntityId: {
-  type: String,
-  default: "",
-  index: true,
-},
+    dispatchMode: {
+      type: String,
+      enum: ["manual", "auto"],
+      default: "auto",
+    },
 
     customerName: {
       type: String,
@@ -78,6 +59,49 @@ pharmacyName: {
 storeName: {
   type: String,
   default: "",
+},
+
+pickupPhone: {
+  type: String,
+  default: "",
+},
+
+pickupExternalId: {
+  type: String,
+  default: "",
+},
+
+dropoffInstructions: {
+  type: String,
+  default: "",
+},
+
+itemsCount: {
+  type: Number,
+  default: 0,
+},
+
+items: [
+  {
+    _id: false,
+    name: {
+      type: String,
+      default: "",
+    },
+    quantity: {
+      type: Number,
+      default: 1,
+    },
+    note: {
+      type: String,
+      default: "",
+    },
+  },
+],
+
+currency: {
+  type: String,
+  default: "NGN",
 },
 
 sourceType: {
@@ -140,12 +164,13 @@ sourceType: {
   type: String,
   enum: [
     "pending",
+    "assigned",
     "accepted",
-    "heading_to_restaurant",
-    "arrived_restaurant",
+    "en_route_to_pickup",
+    "arrived_pickup",
     "picked_up",
-    "on_the_way",
-    "arrived_customer",
+    "in_transit",
+    "arrived_delivery",
     "delivered",
     "cancelled",
     "failed",
@@ -171,6 +196,49 @@ expiresAt: {
   default: null,
 },
 
+currentAssignment: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Assignment",
+  default: null,
+},
+
+statusChangedAt: {
+  type: Date,
+  default: Date.now,
+},
+
+cancelReason: {
+  type: String,
+  default: "",
+},
+
+cancelledBy: {
+  type: String,
+  default: "",
+},
+
+courierLocation: {
+  lat: {
+    type: Number,
+    default: null,
+  },
+
+  lng: {
+    type: Number,
+    default: null,
+  },
+
+  recordedAt: {
+    type: Date,
+    default: null,
+  },
+},
+
+lastLocationEventAt: {
+  type: Date,
+  default: null,
+},
+
   },
   {
     timestamps: true,
@@ -183,6 +251,26 @@ orderSchema.index({
 
 orderSchema.index({
   dropoffLocation: "2dsphere",
+});
+
+orderSchema.index(
+  {
+    platform: 1,
+    externalOrderId: 1,
+  },
+  {
+    unique: true,
+    partialFilterExpression: {
+      externalOrderId: {
+        $type: "string",
+      },
+    },
+  }
+);
+
+orderSchema.index({
+  courier: 1,
+  status: 1,
 });
 
 const Order = mongoose.model(

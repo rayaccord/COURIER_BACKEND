@@ -1,430 +1,95 @@
-import Order from "../models/Order.js";
-import Courier from "../models/Courier.js";
-import { io, connectedCouriers } from "../server.js";
+import { createPlatformDelivery } from "./platformController.js";
+import { DispatchError } from "../services/dispatch.js";
+
+const firstName = (...values) =>
+  values.find((value) => typeof value === "string" && value.trim()) || "";
+
+const fromLegacyBody = (body) => {
+  const pickup = body.pickup || {};
+
+  const dropoff = body.dropoff || {};
+
+  let type = body.hooks_entity_type || body.source?.type || pickup.type || "";
+
+  let externalId = body.hooks_entity_id || body.source?.id || pickup.id || "";
+
+  if (!type && body.hooks_restaurant_id) {
+    type = "restaurant";
+    externalId = body.hooks_restaurant_id;
+  } else if (!type && body.hooks_pharmacy_id) {
+    type = "pharmacy";
+    externalId = body.hooks_pharmacy_id;
+  } else if (!type && body.hooks_store_id) {
+    type = "store";
+    externalId = body.hooks_store_id;
+  }
+
+  return {
+    external_order_id: body.external_order_id || body.hooks_order_id,
+    external_reference: body.external_reference || body.order_number || "",
+    dispatch: body.dispatch || "auto",
+    pickup: {
+      name: firstName(
+        pickup.name,
+        body.source?.name,
+        body.store?.name,
+        body.pharmacy?.name,
+        body.restaurant?.name
+      ),
+      type,
+      external_id: externalId,
+      phone: pickup.phone,
+      address: pickup.address,
+      lat: pickup.lat ?? pickup.latitude,
+      lng: pickup.lng ?? pickup.longitude,
+    },
+    dropoff: {
+      name: firstName(dropoff.name, body.customer?.name),
+      phone: firstName(dropoff.phone, body.customer?.phone),
+      address: dropoff.address,
+      instructions: dropoff.instructions || dropoff.delivery_instruction,
+      lat: dropoff.lat ?? dropoff.latitude,
+      lng: dropoff.lng ?? dropoff.longitude,
+    },
+    fee: body.delivery_fee ?? body.order?.delivery_fee ?? body.fee ?? 0,
+    items: Array.isArray(body.items)
+      ? body.items.map((item) => ({
+          name: item?.name,
+          quantity: item?.quantity,
+          note: item?.note,
+        }))
+      : [],
+    metadata: {
+      user_id: body.hooks_user_id || "",
+      restaurant_id: body.hooks_restaurant_id || "",
+      pharmacy_id: body.hooks_pharmacy_id || "",
+      store_id: body.hooks_store_id || "",
+      payment_method: body.payment_method || "",
+    },
+  };
+};
 
 export const createDelivery = async (req, res) => {
   try {
-    const {
-      // ------------------------------------------
-      // HOOKS IDENTIFIERS
-      // ------------------------------------------
-      hooks_order_id,
-      hooks_user_id,
-
-      // Restaurant
-      hooks_restaurant_id,
-
-      // Pharmacy
-      hooks_pharmacy_id,
-
-      // Store
-      hooks_store_id,
-
-      // Generic source/entity
-      hooks_entity_type,
-      hooks_entity_id,
-
-      // ------------------------------------------
-      // CUSTOMER
-      // ------------------------------------------
-      customer,
-
-      // ------------------------------------------
-      // BUSINESS / PICKUP SOURCE
-      // ------------------------------------------
-      restaurant,
-      pharmacy,
-      store,
-      source,
-
-      // ------------------------------------------
-      // LOCATIONS
-      // ------------------------------------------
-      pickup,
-      dropoff,
-
-      // ------------------------------------------
-      // ORDER
-      // ------------------------------------------
-      order,
-
-      // ------------------------------------------
-      // DELIVERY FEE
-      // ------------------------------------------
-      delivery_fee,
-    } = req.body;
-
-    // ============================================================
-    // REQUIRED HOOKS ORDER ID
-    // ============================================================
-
-    if (!hooks_order_id) {
-      return res.status(400).json({
-        message: "hooks_order_id is required",
-      });
-    }
-
-    // ============================================================
-    // PREVENT DUPLICATE DELIVERY
-    // ============================================================
-
-    const existingOrder = await Order.findOne({
-      hooksOrderId: hooks_order_id,
-    });
-
-    if (existingOrder) {
-      return res.status(200).json({
-        message: "Delivery already exists",
-        delivery: existingOrder,
-        order: existingOrder,
-      });
-    }
-
-    // ============================================================
-    // VALIDATE PICKUP
-    // ============================================================
-
-    if (
-      !pickup ||
-      typeof pickup.latitude !== "number" ||
-      typeof pickup.longitude !== "number"
-    ) {
-      return res.status(400).json({
-        message: "Valid pickup coordinates are required",
-      });
-    }
-
-    // ============================================================
-    // VALIDATE DROPOFF
-    // ============================================================
-
-    if (
-      !dropoff ||
-      typeof dropoff.latitude !== "number" ||
-      typeof dropoff.longitude !== "number"
-    ) {
-      return res.status(400).json({
-        message: "Valid dropoff coordinates are required",
-      });
-    }
-
-    // ============================================================
-    // DETERMINE DELIVERY SOURCE
-    // ============================================================
-
-    let entityType = hooks_entity_type || "";
-    let entityId = hooks_entity_id || "";
-
-    // ------------------------------------------------------------
-    // Restaurant
-    // ------------------------------------------------------------
-
-    if (
-      !entityType &&
-      hooks_restaurant_id
-    ) {
-      entityType = "restaurant";
-      entityId = hooks_restaurant_id;
-    }
-
-    // ------------------------------------------------------------
-    // Pharmacy
-    // ------------------------------------------------------------
-
-    if (
-      !entityType &&
-      hooks_pharmacy_id
-    ) {
-      entityType = "pharmacy";
-      entityId = hooks_pharmacy_id;
-    }
-
-    // ------------------------------------------------------------
-    // Store
-    // ------------------------------------------------------------
-
-    if (
-      !entityType &&
-      hooks_store_id
-    ) {
-      entityType = "store";
-      entityId = hooks_store_id;
-    }
-
-    // ------------------------------------------------------------
-    // Generic source
-    // ------------------------------------------------------------
-
-    if (
-      !entityType &&
-      source?.type
-    ) {
-      entityType = source.type;
-      entityId =
-        source.id ||
-        "";
-    }
-
-    // ============================================================
-    // DETERMINE BUSINESS NAME
-    // ============================================================
-
-    let businessName = "Pickup Location";
-
-    // Restaurant
-    if (restaurant?.name) {
-      businessName = restaurant.name;
-    }
-
-    // Pharmacy
-    if (pharmacy?.name) {
-      businessName = pharmacy.name;
-    }
-
-    // Store
-    if (store?.name) {
-      businessName = store.name;
-    }
-
-    // Generic source
-    if (source?.name) {
-      businessName = source.name;
-    }
-
-    // Generic pickup name
-    if (pickup?.name) {
-      businessName = pickup.name;
-    }
-
-    // ============================================================
-    // CREATE COURIER DELIVERY
-    // ============================================================
-
-    const newOrder = await Order.create({
-      // ----------------------------------------------------------
-      // COURIER ORDER NUMBER
-      // ----------------------------------------------------------
-
-      orderNumber: `ORD-${Date.now()}`,
-
-      // ----------------------------------------------------------
-      // HOOKS ORDER
-      // ----------------------------------------------------------
-
-      hooksOrderId: hooks_order_id,
-
-      // ----------------------------------------------------------
-      // HOOKS USER
-      // ----------------------------------------------------------
-
-      hooksUserId:
-        hooks_user_id || "",
-
-      // ----------------------------------------------------------
-      // RESTAURANT
-      // ----------------------------------------------------------
-
-      hooksRestaurantId:
-        hooks_restaurant_id || "",
-
-      // ----------------------------------------------------------
-      // PHARMACY
-      // ----------------------------------------------------------
-
-      hooksPharmacyId:
-        hooks_pharmacy_id || "",
-
-      // ----------------------------------------------------------
-      // STORE
-      // ----------------------------------------------------------
-
-      hooksStoreId:
-        hooks_store_id || "",
-
-      // ----------------------------------------------------------
-      // GENERIC ENTITY
-      // ----------------------------------------------------------
-
-      hooksEntityType:
-        entityType || "",
-
-      hooksEntityId:
-        entityId || "",
-
-      // ----------------------------------------------------------
-      // CUSTOMER
-      // ----------------------------------------------------------
-
-      customerName:
-        customer?.name ||
-        "Customer",
-
-      customerPhone:
-        customer?.phone ||
-        "",
-
-      // ----------------------------------------------------------
-      // BUSINESS NAME
-      // ----------------------------------------------------------
-
-      restaurantName:
-        businessName,
-
-      // ----------------------------------------------------------
-      // PICKUP ADDRESS
-      // ----------------------------------------------------------
-
-      pickupAddress:
-        pickup?.address ||
-        "",
-
-      // ----------------------------------------------------------
-      // PICKUP LOCATION
-      // ----------------------------------------------------------
-
-      pickupLocation: {
-        type: "Point",
-
-        coordinates: [
-          pickup.longitude,
-          pickup.latitude,
-        ],
-      },
-
-      // ----------------------------------------------------------
-      // DROPOFF ADDRESS
-      // ----------------------------------------------------------
-
-      dropoffAddress:
-        dropoff?.address ||
-        "",
-
-      // ----------------------------------------------------------
-      // DROPOFF LOCATION
-      // ----------------------------------------------------------
-
-      dropoffLocation: {
-        type: "Point",
-
-        coordinates: [
-          dropoff.longitude,
-          dropoff.latitude,
-        ],
-      },
-
-      // ----------------------------------------------------------
-      // DELIVERY FEE
-      // ----------------------------------------------------------
-
-      fee: Number(
-        delivery_fee ??
-        order?.delivery_fee ??
-        0
-      ),
-
-      // ----------------------------------------------------------
-      // STATUS
-      // ----------------------------------------------------------
-
-      status: "pending",
-    });
-
-    // ============================================================
-    // FIND NEARBY ONLINE COURIERS
-    // ============================================================
-
-    const nearbyCouriers =
-      await Courier.find({
-        online: true,
-
-        location: {
-          $near: {
-            $geometry:
-              newOrder.pickupLocation,
-
-            $maxDistance: 50000,
-          },
-        },
-      });
-
-    // ============================================================
-    // SEND DELIVERY TO CONNECTED COURIERS
-    // ============================================================
-
-    for (
-      const courier
-      of nearbyCouriers
-    ) {
-      const socketId =
-        connectedCouriers.get(
-          courier._id.toString()
-        );
-
-      // ----------------------------------------------------------
-      // COURIER NOT CONNECTED
-      // ----------------------------------------------------------
-
-      if (!socketId) {
-        continue;
-      }
-
-      // ----------------------------------------------------------
-      // ADD COURIER TO ASSIGNED COURIERS
-      // ----------------------------------------------------------
-
-      if (
-        !newOrder.assignedCouriers.some(
-          (id) =>
-            id.toString() ===
-            courier._id.toString()
-        )
-      ) {
-        newOrder.assignedCouriers.push(
-          courier._id
-        );
-      }
-
-      // ----------------------------------------------------------
-      // SEND REAL-TIME ORDER
-      // ----------------------------------------------------------
-
-      io.to(socketId).emit(
-        "new-order",
-        newOrder
-      );
-    }
-
-    // ============================================================
-    // SAVE ORDER
-    // ============================================================
-
-    await newOrder.save();
-
-    // ============================================================
-    // RESPONSE TO HOOKS BACKEND
-    // ============================================================
-
-    return res.status(201).json({
-      message:
-        "Delivery created",
-
-      delivery:
-        newOrder,
-    });
-
-  } catch (error) {
-
-    console.error(
-      "CREATE DELIVERY ERROR:",
-      error
+    const { order, created } = await createPlatformDelivery(
+      req.platform,
+      fromLegacyBody(req.body || {})
     );
 
-    return res.status(500).json({
-      message:
-        "Server Error",
+    return res.status(created ? 201 : 200).json({
+      message: created ? "Delivery created" : "Delivery already exists",
+      delivery: order,
+      order,
+    });
+  } catch (error) {
+    if (error instanceof DispatchError) {
+      return res.status(error.status).json({ message: error.message });
+    }
 
-      error:
-        error.message,
+    console.error("CREATE DELIVERY ERROR:", error);
+
+    return res.status(500).json({
+      message: "Server Error",
     });
   }
 };
