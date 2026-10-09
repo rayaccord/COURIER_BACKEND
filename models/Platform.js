@@ -37,6 +37,12 @@ const platformSchema = new mongoose.Schema(
       default: "manual",
     },
 
+    payoutBy: {
+      type: String,
+      enum: ["courier", "platform"],
+      default: "courier",
+    },
+
     assignmentTimeoutSeconds: {
       type: Number,
       default: null,

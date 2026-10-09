@@ -228,3 +228,6 @@ Couriers that are not connected get an Expo push notification for new offers.
 - The socket requires the courier JWT, and a courier only receives their own events.
 - Accepting a delivery is atomic and only allowed for the courier it was offered to.
 - A courier can no longer cancel a platform's delivery. Dropping it before pickup returns it to the platform.
+
+
+PLATFORM_PAYOUT_BY=platform means the platform pays couriers itself; such earnings count in totals and history but not in the withdrawable balance.

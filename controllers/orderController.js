@@ -240,9 +240,25 @@ const creditCourier = async (order) => {
 
   const earning = Number(order.fee || 0);
 
+  const platform = order.platform
+    ? await Platform.findById(order.platform)
+    : null;
+
+  // A platform such as Hooks can pay its couriers itself, by bank
+  // transfer from its own admin wallet. Those earnings still count in
+  // the courier's history and totals, but never in the balance the
+  // courier can withdraw here, so nobody is paid twice.
+  const paidByPlatform = platform?.payoutBy === "platform";
+
   const balanceBefore = courier.wallet.available;
 
-  courier.wallet.available += earning;
+  if (paidByPlatform) {
+    courier.wallet.paidByPlatform =
+      (courier.wallet.paidByPlatform || 0) + earning;
+  } else {
+    courier.wallet.available += earning;
+  }
+
   courier.wallet.today += earning;
   courier.wallet.weekly += earning;
   courier.wallet.monthly += earning;
@@ -261,6 +277,8 @@ const creditCourier = async (order) => {
     reference,
     orderId: order._id,
     status: "completed",
+    paidBy: paidByPlatform ? "platform" : "courier",
+    paidByName: paidByPlatform ? platform.name : "",
   });
 };
 

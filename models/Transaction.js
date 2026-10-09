@@ -72,6 +72,17 @@ const transactionSchema = new mongoose.Schema(
       ],
       default: "completed",
     },
+
+    paidBy: {
+      type: String,
+      enum: ["courier", "platform"],
+      default: "courier",
+    },
+
+    paidByName: {
+      type: String,
+      default: "",
+    },
   },
   {
     timestamps: true,

@@ -138,6 +138,11 @@ referralTotalEarned: {
     default: 0,
   },
 
+  paidByPlatform: {
+    type: Number,
+    default: 0,
+  },
+
   pending: {
     type: Number,
     default: 0,

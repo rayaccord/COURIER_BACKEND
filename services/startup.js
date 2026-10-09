@@ -42,6 +42,10 @@ export const bootstrapPlatform = async () => {
       process.env.PLATFORM_DISPATCH_MODE === "auto"
         ? "auto"
         : "manual",
+    payoutBy:
+      process.env.PLATFORM_PAYOUT_BY === "platform"
+        ? "platform"
+        : "courier",
   };
 
   return Platform.findOneAndUpdate(
