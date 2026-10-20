@@ -7,6 +7,7 @@ import {
   updateLocation,
   savePushToken,
 } from "../controllers/courierController.js";
+import { courierCampaigns } from "../controllers/campaignController.js";
 
 const router =
   express.Router();
@@ -27,6 +28,12 @@ router.put(
   "/location",
   authMiddleware,
   updateLocation
+);
+
+router.get(
+  "/campaigns",
+  authMiddleware,
+  courierCampaigns
 );
 
 router.post(

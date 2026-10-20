@@ -1,6 +1,7 @@
 import express from "express";
 
 import platformAuth from "../middleware/platformAuth.js";
+import { deleteCampaign, saveCampaign } from "../controllers/campaignController.js";
 import {
   assignDelivery,
   cancelPlatformDelivery,
@@ -29,6 +30,8 @@ router.get("/deliveries/:id/events", getDeliveryEvents);
 router.get("/deliveries/:id/tracking", getDeliveryTracking);
 
 router.get("/couriers/nearby", getNearbyCouriers);
+router.put("/campaigns/:externalId", saveCampaign);
+router.delete("/campaigns/:externalId", deleteCampaign);
 router.get("/couriers", listCouriers);
 router.get("/couriers/:id", getCourier);
 
