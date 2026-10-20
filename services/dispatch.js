@@ -244,6 +244,60 @@ export const findNearbyCouriers = async ({
     .slice(0, limit);
 };
 
+export const findOtherCouriers = async ({
+  lat,
+  lng,
+  excludeIds = [],
+  limit = 20,
+  includeBusy = false,
+  dropoff = null,
+  platformId = null,
+}) => {
+  const pickup = { lat, lng };
+
+  const skip = new Set(excludeIds.map(String));
+
+  const couriers = await Courier.find({
+    online: true,
+    location: {
+      $near: {
+        $geometry: {
+          type: "Point",
+          coordinates: [lng, lat],
+        },
+      },
+    },
+  })
+    .select("-password -bankAccount -wallet -verificationCode -resetPasswordCode")
+    .limit(200);
+
+  const workload = await courierWorkload(
+    couriers.map((courier) => courier._id)
+  );
+
+  return couriers
+    .filter((courier) => !skip.has(String(courier._id)))
+    .map((courier) =>
+      describeCourier({
+        courier,
+        work: workload.get(String(courier._id)),
+        platformId,
+        pickup,
+        dropoff,
+      })
+    )
+    .filter(
+      (courier) =>
+        includeBusy || ["available", "no_gps"].includes(courier.availability)
+    )
+    .sort(
+      (a, b) =>
+        (a.distance_to_pickup_m ?? Infinity) -
+        (b.distance_to_pickup_m ?? Infinity)
+    )
+    .slice(0, limit);
+};
+
 export const offerView = (order, courier, expiresAt, assignment = null) => {
   const pickup = pointOf(order.pickupLocation);
 

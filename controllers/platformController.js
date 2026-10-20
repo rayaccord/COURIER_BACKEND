@@ -16,6 +16,7 @@ import {
   describeCourier,
   DispatchError,
   findNearbyCouriers,
+  findOtherCouriers,
   radiusFor,
   trackingView,
 } from "../services/dispatch.js";
@@ -517,10 +518,26 @@ export const getNearbyCouriers = async (req, res) => {
       platformId: req.platform._id,
     });
 
+    const others =
+      req.query.fallback === "true"
+        ? await findOtherCouriers({
+            lat,
+            lng,
+            excludeIds: couriers.map((courier) => courier.id),
+            limit: 20,
+            includeBusy: req.query.include_busy === "true",
+            dropoff: isCoordinate(dropoffLat, dropoffLng)
+              ? { lat: dropoffLat, lng: dropoffLng }
+              : null,
+            platformId: req.platform._id,
+          })
+        : undefined;
+
     return res.json({
       radius_km: radiusKm,
       count: couriers.length,
       couriers,
+      ...(others ? { others } : {}),
     });
   } catch (error) {
     return fail(res, error);
