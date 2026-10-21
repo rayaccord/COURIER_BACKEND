@@ -36,6 +36,8 @@ address: courier.homeAddress,
   rating: courier.rating,
   completedOrders: courier.completedOrders,
   online: courier.online,
+  approval: courier.approval,
+  approvalNote: courier.approvalNote,
 });
   } catch (error) {
   console.log("GET PROFILE ERROR:");
@@ -160,6 +162,15 @@ export const updateLocation =
 
 
 
+const APPROVAL_MESSAGES = {
+  pending:
+    "Your account is waiting for approval from the Hooks team. You can go online once it is approved.",
+  paused:
+    "Your account is paused by the Hooks team. Please contact support.",
+  rejected:
+    "Your account was rejected by the Hooks team. Please contact support.",
+};
+
   export const updateOnlineStatus =
   async (req, res) => {
 
@@ -177,6 +188,15 @@ export const updateLocation =
         return res.status(404).json({
           message:
             "Courier not found",
+        });
+      }
+
+      if (online && courier.approval !== "approved") {
+        return res.status(403).json({
+          message:
+            APPROVAL_MESSAGES[courier.approval] ||
+            APPROVAL_MESSAGES.pending,
+          approval: courier.approval,
         });
       }
 

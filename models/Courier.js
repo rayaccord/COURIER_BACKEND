@@ -106,6 +106,21 @@ referralTotalEarned: {
       default: false,
     },
 
+    approval: {
+      type: String,
+      enum: ["pending", "approved", "rejected", "paused"],
+      default: "pending",
+    },
+
+    approvalNote: {
+      type: String,
+      default: "",
+    },
+
+    approvalUpdatedAt: {
+      type: Date,
+    },
+
     verificationCode: {
       type: String,
     },

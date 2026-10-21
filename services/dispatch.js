@@ -207,6 +207,7 @@ export const findNearbyCouriers = async ({
 
   const couriers = await Courier.find({
     online: true,
+    approval: "approved",
     "location.lastUpdated": { $gte: staleCutoff() },
     location: {
       $near: {
@@ -259,6 +260,7 @@ export const findOtherCouriers = async ({
 
   const couriers = await Courier.find({
     online: true,
+    approval: "approved",
     location: {
       $near: {
         $geometry: {
@@ -453,6 +455,10 @@ export const assignCourier = async ({
 
   if (!courier) {
     throw new DispatchError(404, "Courier not found");
+  }
+
+  if (courier.approval !== "approved") {
+    throw new DispatchError(409, "This courier is not approved yet");
   }
 
   if (TERMINAL_STATUSES.includes(order.status)) {

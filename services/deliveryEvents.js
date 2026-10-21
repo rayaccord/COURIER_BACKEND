@@ -58,6 +58,10 @@ export const serializeCourier = (courier) => {
       courier.vehicleRegistration || "",
     rating: courier.rating ?? null,
     online: Boolean(courier.online),
+    approval: courier.approval || "pending",
+    approval_note: courier.approvalNote || "",
+    city: courier.city || "",
+    created_at: iso(courier.createdAt),
     location: point
       ? {
           lat: point.lat,

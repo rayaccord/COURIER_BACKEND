@@ -13,6 +13,7 @@ import {
   getDeliveryTracking,
   getNearbyCouriers,
   listCouriers,
+  setCourierApproval,
   updateDelivery,
 } from "../controllers/platformController.js";
 
@@ -34,5 +35,6 @@ router.put("/campaigns/:externalId", saveCampaign);
 router.delete("/campaigns/:externalId", deleteCampaign);
 router.get("/couriers", listCouriers);
 router.get("/couriers/:id", getCourier);
+router.post("/couriers/:id/approval", setCourierApproval);
 
 export default router;

@@ -564,7 +564,7 @@ export const listCouriers = async (req, res) => {
     }
 
     const couriers = await Courier.find(filter)
-      .select("fullName phone email vehicle vehicleRegistration rating online location createdAt")
+      .select("fullName phone email vehicle vehicleRegistration rating online location createdAt approval approvalNote city")
       .sort({ online: -1, fullName: 1 })
       .limit(500);
 
@@ -580,6 +580,16 @@ export const listCouriers = async (req, res) => {
       })
     );
 
+    const counts = {
+      total: rows.length,
+      online: rows.filter((row) => row.online).length,
+      available: rows.filter((row) => row.available).length,
+      pending: rows.filter((row) => row.approval === "pending").length,
+      approved: rows.filter((row) => row.approval === "approved").length,
+      paused: rows.filter((row) => row.approval === "paused").length,
+      rejected: rows.filter((row) => row.approval === "rejected").length,
+    };
+
     const status = text(req.query.status, 20);
 
     if (status && status !== "all") {
@@ -588,7 +598,51 @@ export const listCouriers = async (req, res) => {
       );
     }
 
-    return res.json({ count: rows.length, couriers: rows });
+    return res.json({ count: rows.length, counts, couriers: rows });
+  } catch (error) {
+    return fail(res, error);
+  }
+};
+
+const APPROVALS = ["pending", "approved", "rejected", "paused"];
+
+export const setCourierApproval = async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      throw new DispatchError(404, "Courier not found");
+    }
+
+    const approval = text(req.body?.approval, 20);
+
+    if (!APPROVALS.includes(approval)) {
+      throw new DispatchError(400, "approval must be pending, approved, rejected or paused");
+    }
+
+    const courier = await Courier.findById(req.params.id);
+
+    if (!courier) {
+      throw new DispatchError(404, "Courier not found");
+    }
+
+    courier.approval = approval;
+    courier.approvalNote = text(req.body?.note, 300) || "";
+    courier.approvalUpdatedAt = new Date();
+
+    if (approval !== "approved") {
+      courier.online = false;
+    }
+
+    await courier.save({ validateModifiedOnly: true });
+
+    const workload = await courierWorkload([courier._id]);
+
+    return res.json({
+      courier: describeCourier({
+        courier,
+        work: workload.get(String(courier._id)),
+        platformId: req.platform._id,
+      }),
+    });
   } catch (error) {
     return fail(res, error);
   }
@@ -601,7 +655,7 @@ export const getCourier = async (req, res) => {
     }
 
     const courier = await Courier.findById(req.params.id).select(
-      "fullName phone email vehicle vehicleRegistration rating online location completedOrders createdAt"
+      "fullName phone email vehicle vehicleRegistration rating online location completedOrders createdAt approval approvalNote city"
     );
 
     if (!courier) {
