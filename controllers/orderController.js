@@ -4,6 +4,7 @@ import Courier from "../models/Courier.js";
 import Transaction from "../models/Transaction.js";
 import settings from "../config/settings.js";
 import { recordEvent } from "../services/deliveryEvents.js";
+import { weekEarnings } from "../services/earnings.js";
 import {
   ACTIVE_STATUSES,
   BEFORE_PICKUP,
@@ -852,49 +853,8 @@ async (req, res) => {
 
   try {
 
-    const weekData = [
-      0,0,0,0,0,0,0
-    ];
-
-    const today = new Date();
-
-    const startOfWeek = new Date(today);
-
-    startOfWeek.setDate(
-      today.getDate() - today.getDay()
-    );
-
-    startOfWeek.setHours(
-      0,
-      0,
-      0,
-      0
-    );
-
-    const orders =
-      await Order.find({
-
-        courier: req.user.id,
-
-        status: "delivered",
-
-        updatedAt: {
-          $gte: startOfWeek,
-        },
-
-      });
-
-    orders.forEach(order => {
-
-      const day =
-        new Date(
-          order.updatedAt
-        ).getDay();
-
-      weekData[day] +=
-        order.fee;
-
-    });
+    const weekData =
+      await weekEarnings(req.user.id);
 
     res.json(weekData);
 

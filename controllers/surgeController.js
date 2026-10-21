@@ -1,8 +1,5 @@
 import SurgeZone from "../models/SurgeZone.js";
 
-/* ================= SURGE CACHE ================= */
-const surgeCache = new Map();
-
 /* ================= GET SURGE ZONES NEAR COURIER ================= */
 export const getSurgeZones = async (req, res) => {
   try {
@@ -15,41 +12,7 @@ export const getSurgeZones = async (req, res) => {
       });
     }
 
-    const key = `${lat.toFixed(2)}-${lng.toFixed(2)}`;
-
-    const cached = surgeCache.get(key);
-
-    if (
-      cached &&
-      Date.now() - cached.createdAt < 15 * 60 * 1000
-    ) {
-      return res.json(cached.zones);
-    }
-
-    const multipliers = [
-      "1x",
-      "2.4x",
-      "3x",
-    ];
-
-    const zones = Array.from({ length: 3 }).map(() => ({
-      lat: lat + (Math.random() - 0.5) * 0.02,
-      lng: lng + (Math.random() - 0.5) * 0.02,
-      radius: 400,
-      multiplier:
-        multipliers[
-          Math.floor(
-            Math.random() * multipliers.length
-          )
-        ],
-    }));
-
-    surgeCache.set(key, {
-      createdAt: Date.now(),
-      zones,
-    });
-
-    res.json(zones);
+    res.json([]);
 
   } catch (error) {
     console.log(error);

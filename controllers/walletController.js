@@ -1,6 +1,7 @@
 import Courier from "../models/Courier.js";
 import Withdrawal from "../models/Withdrawal.js";
 import Transaction from "../models/Transaction.js";
+import { periodEarnings } from "../services/earnings.js";
 
 /* GET WALLET */
 export const getWallet = async (req, res) => {
@@ -26,7 +27,10 @@ export const getWallet = async (req, res) => {
       .limit(100);
 
     res.status(200).json({
-      wallet: courier.wallet,
+      wallet: {
+        ...courier.wallet.toObject(),
+        ...(await periodEarnings(courier._id)),
+      },
       bankAccount: courier.bankAccount,
       transactions,
       withdrawals,

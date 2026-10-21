@@ -37,6 +37,9 @@ const settings = {
 
   workerIntervalMs:
     number("WORKER_INTERVAL_SECONDS", 5) * 1000,
+
+  earningsUtcOffsetHours:
+    number("EARNINGS_UTC_OFFSET_HOURS", 1),
 };
 
 export default settings;
