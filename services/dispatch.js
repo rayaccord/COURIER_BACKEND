@@ -330,10 +330,15 @@ const pushOffer = async (order, courier) => {
   await sendPushNotification(
     courier.expoPushToken,
     "New delivery request",
-    `${order.restaurantName}\nFee: ₦${order.fee}`,
+    `${order.restaurantName}\nFee: ₦${Number(order.fee || 0).toLocaleString("en-NG")}`,
     {
       orderId: String(order._id),
       screen: "requests",
+    },
+    {
+      channelId: "delivery-requests",
+      priority: "high",
+      sound: "new_order.wav",
     }
   );
 };

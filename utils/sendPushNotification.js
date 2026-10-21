@@ -2,7 +2,8 @@ const sendPushNotification = async (
   expoPushToken,
   title,
   body,
-  data = {}
+  data = {},
+  options = {}
 ) => {
   try {
     const message = {
@@ -11,10 +12,12 @@ const sendPushNotification = async (
       title,
       body,
       data,
+      ...options,
     };
 
     const response = await fetch(
-      "https://exp.host/--/api/v2/push/send",
+      process.env.EXPO_PUSH_URL ||
+        "https://exp.host/--/api/v2/push/send",
       {
         method: "POST",
         headers: {
