@@ -10,6 +10,7 @@ import {
   verifyResetCode,
   resetPassword,
 } from "../controllers/authController.js";
+import { googleComplete, googleLogin } from "../controllers/googleAuthController.js";
 
 const router = express.Router();
 
@@ -31,6 +32,18 @@ router.post(
     },
   ]),
   registerCourier
+);
+
+router.post("/google", googleLogin);
+
+router.post(
+  "/google/complete",
+  upload.fields([
+    { name: "governmentIdFront", maxCount: 1 },
+    { name: "governmentIdBack", maxCount: 1 },
+    { name: "vehiclePhoto", maxCount: 1 },
+  ]),
+  googleComplete
 );
 
 /* VERIFY ACCOUNT */
