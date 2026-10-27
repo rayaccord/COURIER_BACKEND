@@ -9,6 +9,7 @@ import {
   updateLocation,
   updateOnlineStatus,
   savePushToken,
+  deleteAccount,
 } from "../controllers/profileController.js";
 
 const router = express.Router();
@@ -43,5 +44,10 @@ router.post(
   savePushToken
 );
 
+router.delete(
+  "/account",
+  authMiddleware,
+  deleteAccount
+);
 
 export default router;

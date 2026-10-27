@@ -1,6 +1,8 @@
 import jwt from "jsonwebtoken";
 
-const authMiddleware = (
+import Courier from "../models/Courier.js";
+
+const authMiddleware = async (
   req,
   res,
   next
@@ -25,6 +27,14 @@ const authMiddleware = (
       token,
       process.env.JWT_SECRET
     );
+
+    const live = await Courier.exists({ _id: decoded.id, deletedAt: null });
+
+    if (!live) {
+      return res.status(401).json({
+        message: "Not authorized",
+      });
+    }
 
     req.user = {
       id: decoded.id,

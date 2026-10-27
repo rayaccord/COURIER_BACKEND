@@ -549,7 +549,7 @@ export const getNearbyCouriers = async (req, res) => {
 
 export const listCouriers = async (req, res) => {
   try {
-    const filter = {};
+    const filter = { deletedAt: null };
 
     const search = text(req.query.search, 100);
 

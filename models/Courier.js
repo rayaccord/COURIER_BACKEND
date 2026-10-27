@@ -137,6 +137,11 @@ referralTotalEarned: {
       type: Date,
     },
 
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+
     resetPasswordAttempts: {
       type: Number,
       default: 0,
