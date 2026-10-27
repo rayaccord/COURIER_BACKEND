@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import mongoose from "mongoose";
 
 import Assignment from "../models/Assignment.js";
@@ -20,6 +22,7 @@ import {
   radiusFor,
   trackingView,
 } from "../services/dispatch.js";
+import { UPLOAD_DIR } from "../middleware/upload.js";
 import { isCoordinate } from "../services/geo.js";
 import { emitToCourier } from "../sockets/socketServer.js";
 
@@ -643,6 +646,41 @@ export const setCourierApproval = async (req, res) => {
         platformId: req.platform._id,
       }),
     });
+  } catch (error) {
+    return fail(res, error);
+  }
+};
+
+const DOCUMENTS = {
+  id_front: "governmentIdFront",
+  id_back: "governmentIdBack",
+  vehicle: "vehiclePhoto",
+};
+
+export const getCourierDocument = async (req, res) => {
+  try {
+    const field = DOCUMENTS[req.params.kind];
+
+    if (!field || !mongoose.isValidObjectId(req.params.id)) {
+      throw new DispatchError(404, "Document not found");
+    }
+
+    const courier = await Courier.findById(req.params.id).select(field);
+    const name = path.basename(String(courier?.[field] || ""));
+
+    if (!name) {
+      throw new DispatchError(404, "Document not found");
+    }
+
+    const file = path.join(UPLOAD_DIR, name);
+
+    if (!fs.existsSync(file)) {
+      throw new DispatchError(404, "Document not found");
+    }
+
+    res.set("Cache-Control", "private, no-store");
+
+    return res.sendFile(file);
   } catch (error) {
     return fail(res, error);
   }

@@ -75,6 +75,11 @@ vehiclePhoto: {
         type: Date,
         required: true,
       },
+
+      verificationAttempts: {
+        type: Number,
+        default: 0,
+      },
     },
     {
       timestamps: true,

@@ -1,5 +1,4 @@
 import express from "express";
-import path from "path";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
@@ -15,6 +14,8 @@ import corsOrigins from "./config/cors.js";
 
 
 const app = express();
+
+app.set("trust proxy", Number(process.env.TRUST_PROXY ?? 1));
 
 app.use(cors({ origin: corsOrigins }));
 app.use(express.json());
@@ -57,9 +58,15 @@ app.use(
   v1Routes
 );
 
-app.use(
-  "/uploads",
-  express.static(path.join(process.cwd(), "uploads"))
-);
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+
+  const tooBig = err.code === "LIMIT_FILE_SIZE";
+
+  return res.status(tooBig ? 413 : err.status || (err.name === "MulterError" ? 400 : 500)).json({
+    message: tooBig ? "Each photo must be smaller than 8 MB" : err.status || err.name === "MulterError" ? err.message : "Server Error",
+  });
+});
+
 
 export default app;

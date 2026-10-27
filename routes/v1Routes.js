@@ -8,6 +8,7 @@ import {
   createDelivery,
   dispatchDelivery,
   getCourier,
+  getCourierDocument,
   getDelivery,
   getDeliveryEvents,
   getDeliveryTracking,
@@ -35,6 +36,7 @@ router.put("/campaigns/:externalId", saveCampaign);
 router.delete("/campaigns/:externalId", deleteCampaign);
 router.get("/couriers", listCouriers);
 router.get("/couriers/:id", getCourier);
+router.get("/couriers/:id/documents/:kind", getCourierDocument);
 router.post("/couriers/:id/approval", setCourierApproval);
 
 export default router;

@@ -2,6 +2,25 @@ import bcrypt from "bcryptjs";
 import Courier from "../models/Courier.js";
 import PendingCourier from "../models/PendingCourier.js";
 import generateCode from "../utils/generateCode.js";
+
+const MAX_CODE_TRIES = 5;
+
+const TOO_MANY_TRIES = "Too many wrong codes. Please ask for a new code.";
+
+const burnResetCode = async (courier) => {
+  const updated = await Courier.findOneAndUpdate(
+    { _id: courier._id },
+    { $inc: { resetPasswordAttempts: 1 } },
+    { new: true }
+  );
+
+  if ((updated?.resetPasswordAttempts || 0) >= MAX_CODE_TRIES) {
+    await Courier.updateOne(
+      { _id: courier._id },
+      { $set: { resetPasswordCode: null, resetPasswordCodeExpires: null } }
+    );
+  }
+};
 import sendEmail from "../utils/sendEmail.js";
 import generateToken from "../utils/generateToken.js";
 
@@ -179,10 +198,21 @@ export const verifyCourier = async (req, res) => {
       });
     }
 
+    if ((pendingCourier.verificationAttempts || 0) >= MAX_CODE_TRIES) {
+      return res.status(429).json({
+        message: TOO_MANY_TRIES,
+      });
+    }
+
     if (
       pendingCourier.verificationCode !==
-      code
+      String(code)
     ) {
+      await PendingCourier.updateOne(
+        { _id: pendingCourier._id },
+        { $inc: { verificationAttempts: 1 } }
+      );
+
       return res.status(400).json({
         message:
           "Invalid verification code",
@@ -375,6 +405,8 @@ export const forgotPassword = async (req, res) => {
 
     courier.resetPasswordCode = resetCode;
 
+    courier.resetPasswordAttempts = 0;
+
     courier.resetPasswordCodeExpires =
       Date.now() + 10 * 60 * 1000;
 
@@ -453,9 +485,17 @@ export const verifyResetCode = async (req, res) => {
       });
     }
 
+    if (!courier.resetPasswordCode) {
+      return res.status(429).json({
+        message: TOO_MANY_TRIES,
+      });
+    }
+
     if (
-      courier.resetPasswordCode !== code
+      courier.resetPasswordCode !== String(code)
     ) {
+      await burnResetCode(courier);
+
       return res.status(400).json({
         message: "Invalid reset code",
       });
@@ -496,6 +536,10 @@ export const resetPassword = async (req, res) => {
     }
 
     const courier = await Courier.findOne({ email });
+
+    if (courier && courier.resetPasswordCode && code && courier.resetPasswordCode !== String(code)) {
+      await burnResetCode(courier);
+    }
 
     if (
       !courier ||
@@ -562,6 +606,8 @@ export const resendVerificationCode =
 
       pendingCourier.verificationCode =
         verificationCode;
+
+      pendingCourier.verificationAttempts = 0;
 
       pendingCourier.verificationCodeExpires =
         Date.now() +
