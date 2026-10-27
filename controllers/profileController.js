@@ -210,6 +210,13 @@ const APPROVAL_MESSAGES = {
         });
       }
 
+      if (!online && (await Order.exists({ courier: courier._id, status: { $in: ACTIVE_STATUSES } }))) {
+        return res.status(409).json({
+          message:
+            "Finish your current delivery before going offline. If you cannot finish it, call Hooks support.",
+        });
+      }
+
       courier.online =
         online;
 
