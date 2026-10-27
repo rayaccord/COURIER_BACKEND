@@ -11,6 +11,7 @@ import {
   serializeDelivery,
 } from "../services/deliveryEvents.js";
 import {
+  ACTIVE_STATUSES,
   assignCourier,
   autoDispatch,
   cancelDelivery,
@@ -377,6 +378,51 @@ export const cancelPlatformDelivery = async (req, res) => {
       message: "Delivery cancelled",
       delivery: await withRelations(cancelled),
     });
+  } catch (error) {
+    return fail(res, error);
+  }
+};
+
+export const failPlatformDelivery = async (req, res) => {
+  try {
+    const order = await loadDelivery(req);
+
+    if (!ACTIVE_STATUSES.includes(order.status)) {
+      throw new DispatchError(409, `Delivery is ${order.status}, only a delivery in progress can be closed`);
+    }
+
+    const reason = text(req.body?.reason, 300) || "Closed by the platform";
+
+    const updated = await Order.findOneAndUpdate(
+      { _id: order._id, status: order.status },
+      { $set: { status: "failed", statusChangedAt: new Date(), cancelReason: reason } },
+      { returnDocument: "after" }
+    );
+
+    if (!updated) {
+      throw new DispatchError(409, "Delivery changed, please try again");
+    }
+
+    const assignment = updated.currentAssignment
+      ? await Assignment.findByIdAndUpdate(updated.currentAssignment, { $set: { status: "completed", reason: "failed" } }, { returnDocument: "after" })
+      : null;
+
+    const courier = updated.courier ? await Courier.findById(updated.courier) : null;
+
+    if (updated.courier) {
+      emitToCourier(updated.courier, "delivery-updated", updated);
+    }
+
+    await recordEvent({
+      order: updated,
+      event: "delivery.failed",
+      courier,
+      assignment,
+      actor: "platform",
+      note: reason,
+    });
+
+    return res.json({ message: "Delivery closed", delivery: await withRelations(updated) });
   } catch (error) {
     return fail(res, error);
   }

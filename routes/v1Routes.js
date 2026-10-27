@@ -8,6 +8,7 @@ import {
   cancelPlatformDelivery,
   createDelivery,
   dispatchDelivery,
+  failPlatformDelivery,
   getCourier,
   getCourierDocument,
   getDelivery,
@@ -27,6 +28,7 @@ router.post("/deliveries", createDelivery);
 router.get("/deliveries/:id", getDelivery);
 router.patch("/deliveries/:id", updateDelivery);
 router.post("/deliveries/:id/cancel", cancelPlatformDelivery);
+router.post("/deliveries/:id/fail", failPlatformDelivery);
 router.post("/deliveries/:id/assign", assignDelivery);
 router.post("/deliveries/:id/dispatch", dispatchDelivery);
 router.get("/deliveries/:id/events", getDeliveryEvents);
