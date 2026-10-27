@@ -2,6 +2,7 @@ import express from "express";
 
 import platformAuth from "../middleware/platformAuth.js";
 import { deleteCampaign, saveCampaign } from "../controllers/campaignController.js";
+import { listWithdrawals, setWithdrawalStatus } from "../controllers/withdrawalController.js";
 import {
   assignDelivery,
   cancelPlatformDelivery,
@@ -38,5 +39,7 @@ router.get("/couriers", listCouriers);
 router.get("/couriers/:id", getCourier);
 router.get("/couriers/:id/documents/:kind", getCourierDocument);
 router.post("/couriers/:id/approval", setCourierApproval);
+router.get("/withdrawals", listWithdrawals);
+router.post("/withdrawals/:id/status", setWithdrawalStatus);
 
 export default router;
