@@ -149,6 +149,7 @@ export const serializeDelivery = (
     created_at: iso(order.createdAt),
     updated_at: iso(order.updatedAt),
     status_changed_at: iso(order.statusChangedAt),
+    ...(order.deliveryCode ? { delivery_code: order.deliveryCode } : {}),
   };
 };
 

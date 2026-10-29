@@ -40,6 +40,12 @@ const settings = {
 
   earningsUtcOffsetHours:
     number("EARNINGS_UTC_OFFSET_HOURS", 1),
+
+  deliveryCodeRequired:
+    process.env.DELIVERY_CODE_REQUIRED === "true",
+
+  deliveryCodeTries:
+    number("DELIVERY_CODE_TRIES", 5),
 };
 
 export default settings;

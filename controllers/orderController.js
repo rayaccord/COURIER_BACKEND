@@ -296,7 +296,7 @@ export const updateOrderStatus =
       const order =
         await Order.findById(
           req.params.id
-        );
+        ).select("+deliveryCode");
 
       if (!order) {
         return res.status(404).json({
@@ -379,6 +379,33 @@ export const updateOrderStatus =
               distance,
             });
           }
+        }
+      }
+
+      if (requested === "delivered" && order.deliveryCode) {
+        const code = String(req.body?.deliveryCode ?? req.body?.delivery_code ?? "").trim();
+
+        if (order.deliveryCodeAttempts >= settings.deliveryCodeTries) {
+          return res.status(429).json({
+            message: "Too many wrong delivery codes. Please call Hooks support.",
+            code: "delivery_code_locked",
+          });
+        }
+
+        if (!code && settings.deliveryCodeRequired) {
+          return res.status(400).json({
+            message: "Ask the customer for the 4 digit delivery code.",
+            code: "delivery_code_required",
+          });
+        }
+
+        if (code && code !== order.deliveryCode) {
+          await Order.updateOne({ _id: order._id }, { $inc: { deliveryCodeAttempts: 1 } });
+
+          return res.status(400).json({
+            message: "The delivery code is wrong. Ask the customer again.",
+            code: "delivery_code_wrong",
+          });
         }
       }
 

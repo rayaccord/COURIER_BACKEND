@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import mongoose from "mongoose";
@@ -191,6 +192,7 @@ export const buildDelivery = (platform, body) => {
     ),
     status: "pending",
     statusChangedAt: new Date(),
+    deliveryCode: String(crypto.randomInt(1000, 10000)),
   };
 };
 

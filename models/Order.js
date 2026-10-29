@@ -207,6 +207,17 @@ statusChangedAt: {
   default: Date.now,
 },
 
+deliveryCode: {
+  type: String,
+  default: "",
+  select: false,
+},
+
+deliveryCodeAttempts: {
+  type: Number,
+  default: 0,
+},
+
 cancelReason: {
   type: String,
   default: "",
