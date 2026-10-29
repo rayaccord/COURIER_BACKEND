@@ -12,6 +12,8 @@ import {
   resetPassword,
 } from "../controllers/authController.js";
 import { googleComplete, googleLogin } from "../controllers/googleAuthController.js";
+import authMiddleware from "../middleware/authMiddleware.js";
+import generateToken from "../utils/generateToken.js";
 
 const router = express.Router();
 
@@ -83,5 +85,9 @@ router.post(
   codeLimit,
   resetPassword
 );
+
+router.post("/refresh", authMiddleware, (req, res) => {
+  res.json({ token: generateToken(req.user.id) });
+});
 
 export default router;
