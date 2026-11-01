@@ -332,6 +332,13 @@ export const updateOrderStatus =
         });
       }
 
+      if (requested !== "failed" && order.status === requested) {
+        return res.status(200).json({
+          message: "Order updated",
+          order,
+        });
+      }
+
       const courierPoint = pointOf(courier.location);
 
       if (requested === "failed") {

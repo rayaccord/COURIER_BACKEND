@@ -26,13 +26,30 @@ export const getWallet = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(100);
 
+    const withdrawalById = new Map(
+      withdrawals.map((row) => [String(row._id), row])
+    );
+
+    const listed = transactions.map((row) => {
+      const plain = row.toObject();
+      const withdrawal = withdrawalById.get(String(plain.withdrawalId));
+
+      return withdrawal
+        ? {
+            ...plain,
+            withdrawalStatus: withdrawal.status,
+            withdrawalReason: withdrawal.rejectionReason || withdrawal.failureReason || "",
+          }
+        : plain;
+    });
+
     res.status(200).json({
       wallet: {
         ...courier.wallet.toObject(),
         ...(await periodEarnings(courier._id)),
       },
       bankAccount: courier.bankAccount,
-      transactions,
+      transactions: listed,
       withdrawals,
     });
   } catch (error) {
@@ -63,6 +80,12 @@ export const updateBankAccount = async (
     if (!courier) {
       return res.status(404).json({
         message: "Courier not found",
+      });
+    }
+
+    if (!/^\d{10}$/.test(String(accountNumber || "").trim())) {
+      return res.status(400).json({
+        message: "The account number must be 10 digits",
       });
     }
 
@@ -104,6 +127,12 @@ export const withdrawFunds = async (req, res) => {
     if (!courier.bankAccount?.accountNumber) {
       return res.status(400).json({
         message: "Please add a payment account first",
+      });
+    }
+
+    if (!/^\d{10}$/.test(String(courier.bankAccount.accountNumber).trim())) {
+      return res.status(400).json({
+        message: "Your bank account number must be 10 digits. Please fix it in your wallet first.",
       });
     }
 
