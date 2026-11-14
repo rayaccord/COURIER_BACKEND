@@ -17,6 +17,7 @@ import {
   getNearbyCouriers,
   listCouriers,
   setCourierApproval,
+  deleteCourier,
   updateDelivery,
 } from "../controllers/platformController.js";
 
@@ -41,6 +42,7 @@ router.get("/couriers", listCouriers);
 router.get("/couriers/:id", getCourier);
 router.get("/couriers/:id/documents/:kind", getCourierDocument);
 router.post("/couriers/:id/approval", setCourierApproval);
+router.delete("/couriers/:id", deleteCourier);
 router.get("/withdrawals", listWithdrawals);
 router.post("/withdrawals/:id/status", setWithdrawalStatus);
 

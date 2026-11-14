@@ -27,6 +27,7 @@ import {
 import { UPLOAD_DIR } from "../middleware/upload.js";
 import { isCoordinate } from "../services/geo.js";
 import { emitToCourier } from "../sockets/socketServer.js";
+import { closeCourier, courierIsBusy } from "../services/closeCourier.js";
 
 const SOURCE_TYPES = ["restaurant", "pharmacy", "store", "other"];
 
@@ -694,6 +695,30 @@ export const setCourierApproval = async (req, res) => {
         platformId: req.platform._id,
       }),
     });
+  } catch (error) {
+    return fail(res, error);
+  }
+};
+
+export const deleteCourier = async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      throw new DispatchError(404, "Courier not found");
+    }
+
+    const courier = await Courier.findOne({ _id: req.params.id, deletedAt: null });
+
+    if (!courier) {
+      throw new DispatchError(404, "Courier not found");
+    }
+
+    if (await courierIsBusy(courier)) {
+      throw new DispatchError(409, "This courier is on a delivery. Finish or cancel it first.");
+    }
+
+    await closeCourier(courier);
+
+    return res.json({ deleted: true });
   } catch (error) {
     return fail(res, error);
   }
