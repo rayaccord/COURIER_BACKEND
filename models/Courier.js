@@ -121,6 +121,35 @@ referralTotalEarned: {
       type: Date,
     },
 
+    agreementStatus: {
+      type: String,
+      enum: ["none", "waiting_upload", "submitted", "approved", "needs_correction"],
+      default: "none",
+    },
+
+    agreementFiles: {
+      type: [String],
+      default: [],
+    },
+
+    agreementSubmittedAt: {
+      type: Date,
+    },
+
+    agreementReviewedAt: {
+      type: Date,
+    },
+
+    agreementNote: {
+      type: String,
+      default: "",
+    },
+
+    agreementHistory: {
+      type: [mongoose.Schema.Types.Mixed],
+      default: [],
+    },
+
     verificationCode: {
       type: String,
     },

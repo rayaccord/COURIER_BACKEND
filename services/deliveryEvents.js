@@ -60,6 +60,10 @@ export const serializeCourier = (courier) => {
     online: Boolean(courier.online),
     approval: courier.approval || "pending",
     approval_note: courier.approvalNote || "",
+    agreement_status: courier.agreementStatus || "none",
+    agreement_pages: (courier.agreementFiles || []).length,
+    agreement_submitted_at: iso(courier.agreementSubmittedAt),
+    agreement_note: courier.agreementNote || "",
     city: courier.city || "",
     created_at: iso(courier.createdAt),
     location: point

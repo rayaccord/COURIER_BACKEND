@@ -20,6 +20,8 @@ import {
   deleteCourier,
   updateDelivery,
 } from "../controllers/platformController.js";
+import { agreementTemplateInfo, courierAgreementPage, decideAgreement, saveAgreementTemplate } from "../controllers/agreementController.js";
+import { templateUpload } from "../services/agreement.js";
 
 const router = express.Router();
 
@@ -43,6 +45,10 @@ router.get("/couriers/:id", getCourier);
 router.get("/couriers/:id/documents/:kind", getCourierDocument);
 router.post("/couriers/:id/approval", setCourierApproval);
 router.delete("/couriers/:id", deleteCourier);
+router.get("/agreement/template", agreementTemplateInfo);
+router.put("/agreement/template", templateUpload.single("file"), saveAgreementTemplate);
+router.get("/couriers/:id/agreement/pages/:page", courierAgreementPage);
+router.post("/couriers/:id/agreement", decideAgreement);
 router.get("/withdrawals", listWithdrawals);
 router.post("/withdrawals/:id/status", setWithdrawalStatus);
 

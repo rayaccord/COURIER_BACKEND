@@ -6,6 +6,7 @@ import Order from "../models/Order.js";
 import { isCoordinate } from "../services/geo.js";
 import Courier from "../models/Courier.js";
 import { closeCourier, courierIsBusy } from "../services/closeCourier.js";
+import { AGREEMENT_MESSAGES, agreementDone } from "../services/agreement.js";
 import { getMessaging } from "firebase-admin/messaging";
 
 /* GET PROFILE */
@@ -43,6 +44,8 @@ address: courier.homeAddress,
   online: courier.online,
   approval: courier.approval,
   approvalNote: courier.approvalNote,
+  agreementStatus: courier.agreementStatus || "none",
+  agreementNote: courier.agreementNote || "",
 });
   } catch (error) {
   console.log("GET PROFILE ERROR:");
@@ -202,6 +205,13 @@ const APPROVAL_MESSAGES = {
             APPROVAL_MESSAGES[courier.approval] ||
             APPROVAL_MESSAGES.pending,
           approval: courier.approval,
+        });
+      }
+
+      if (online && !agreementDone(courier)) {
+        return res.status(403).json({
+          message: AGREEMENT_MESSAGES[courier.agreementStatus] || AGREEMENT_MESSAGES.waiting_upload,
+          agreement: courier.agreementStatus,
         });
       }
 

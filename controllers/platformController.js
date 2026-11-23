@@ -28,6 +28,7 @@ import { UPLOAD_DIR } from "../middleware/upload.js";
 import { isCoordinate } from "../services/geo.js";
 import { emitToCourier } from "../sockets/socketServer.js";
 import { closeCourier, courierIsBusy } from "../services/closeCourier.js";
+import { askForAgreement } from "../services/agreement.js";
 
 const SOURCE_TYPES = ["restaurant", "pharmacy", "store", "other"];
 
@@ -616,7 +617,7 @@ export const listCouriers = async (req, res) => {
     }
 
     const couriers = await Courier.find(filter)
-      .select("fullName phone email vehicle vehicleRegistration rating online location createdAt approval approvalNote city")
+      .select("fullName phone email vehicle vehicleRegistration rating online location createdAt approval approvalNote city agreementStatus agreementFiles agreementSubmittedAt agreementReviewedAt agreementNote")
       .sort({ online: -1, fullName: 1 })
       .limit(500);
 
@@ -679,6 +680,10 @@ export const setCourierApproval = async (req, res) => {
     courier.approval = approval;
     courier.approvalNote = text(req.body?.note, 300) || "";
     courier.approvalUpdatedAt = new Date();
+
+    if (approval === "approved") {
+      await askForAgreement(courier);
+    }
 
     if (approval !== "approved") {
       courier.online = false;
