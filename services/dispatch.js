@@ -16,6 +16,7 @@ import {
   etaSeconds,
   pointOf,
 } from "./geo.js";
+import { arrivalsView } from "./arrival.js";
 
 export const ACTIVE_STATUSES = [
   "accepted",
@@ -843,6 +844,7 @@ export const trackingView = (order, courier) => {
     delivery_id: String(order._id),
     external_order_id: order.externalOrderId || null,
     status: order.status,
+    arrivals: arrivalsView(order),
     pickup: {
       name: order.restaurantName || "",
       address: order.pickupAddress || "",

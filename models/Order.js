@@ -224,6 +224,27 @@ cash: {
   proofFile: String,
 },
 
+arrivals: {
+  pickup: {
+    method: String,
+    lat: Number,
+    lng: Number,
+    accuracy: Number,
+    distance: Number,
+    at: Date,
+    photoFile: String,
+  },
+  delivery: {
+    method: String,
+    lat: Number,
+    lng: Number,
+    accuracy: Number,
+    distance: Number,
+    at: Date,
+    photoFile: String,
+  },
+},
+
 cancelReason: {
   type: String,
   default: "",

@@ -2,6 +2,7 @@ import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { recordCash } from "../controllers/cashController.js";
 import { cashUpload } from "../services/cash.js";
+import { arrivalUpload } from "../services/arrival.js";
 
 import {
   getPendingOrders,
@@ -33,6 +34,7 @@ router.put(
 router.put(
   "/:id/status",
   authMiddleware,
+  arrivalUpload.single("photo"),
   updateOrderStatus
 );
 

@@ -5,6 +5,9 @@ import Transaction from "../models/Transaction.js";
 import settings from "../config/settings.js";
 import { recordEvent } from "../services/deliveryEvents.js";
 import { cashRequired, isCashOrder } from "../services/cash.js";
+import fs from "fs";
+import { ARRIVAL_KIND, ARRIVAL_STEPS, arrivalNote, isManual, reportedPoint } from "../services/arrival.js";
+import { saveCourierLocation } from "../services/courierLocation.js";
 import { weekEarnings } from "../services/earnings.js";
 import {
   ACTIVE_STATUSES,
@@ -290,6 +293,12 @@ const DROPOFF_CHECK = ["arrived_delivery", "delivered"];
 
 export const updateOrderStatus =
   async (req, res) => {
+    let keepPhoto = false;
+
+    res.on("finish", () => {
+      if (req.file && !keepPhoto && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    });
+
     try {
       const requested =
         LEGACY_STATUS[req.body?.status] || req.body?.status;
@@ -340,7 +349,15 @@ export const updateOrderStatus =
         });
       }
 
-      const courierPoint = pointOf(courier.location);
+      const reported = reportedPoint(req.body);
+
+      if (reported) {
+        await saveCourierLocation(req.user.id, reported.lat, reported.lng);
+      }
+
+      const courierPoint = reported ? { lat: reported.lat, lng: reported.lng } : pointOf(courier.location);
+
+      let arrival = null;
 
       if (requested === "failed") {
         if (!ACTIVE_STATUSES.includes(order.status)) {
@@ -361,7 +378,9 @@ export const updateOrderStatus =
             ? pointOf(order.dropoffLocation)
             : null;
 
-        if (target || PICKUP_CHECK.includes(requested) || DROPOFF_CHECK.includes(requested)) {
+        const arrivedBefore = !ARRIVAL_STEPS.includes(requested) && order.arrivals?.[ARRIVAL_KIND[requested]]?.at;
+
+        if (!arrivedBefore && (target || PICKUP_CHECK.includes(requested) || DROPOFF_CHECK.includes(requested))) {
           if (!target) {
             return res.status(400).json({
               message: PICKUP_CHECK.includes(requested)
@@ -379,12 +398,31 @@ export const updateOrderStatus =
 
           const distance = distanceMeters(courierPoint, target);
 
-          if (distance > settings.geofenceMeters) {
+          const allowed = settings.geofenceMeters + Math.min(reported?.accuracy || 0, 100);
+
+          const place = PICKUP_CHECK.includes(requested) ? "pickup" : "customer address";
+
+          if (distance <= allowed) {
+            if (ARRIVAL_STEPS.includes(requested)) {
+              arrival = { method: "gps", lat: courierPoint.lat, lng: courierPoint.lng, accuracy: reported?.accuracy || 0, distance, at: new Date() };
+            }
+          } else if (ARRIVAL_STEPS.includes(requested) && isManual(req.body)) {
+            if (!req.file) {
+              return res.status(400).json({
+                message: `Take a photo at the ${place} to confirm you have arrived.`,
+                code: "photo_required",
+                distance: Math.round(distance),
+              });
+            }
+
+            arrival = { method: "manual", lat: courierPoint.lat, lng: courierPoint.lng, accuracy: reported?.accuracy || 0, distance, at: new Date(), photoFile: req.file.filename };
+          } else {
             return res.status(400).json({
-              message: PICKUP_CHECK.includes(requested)
-                ? "You must be at the pickup location before continuing."
-                : "You must be at the customer address before continuing.",
-              distance,
+              message: ARRIVAL_STEPS.includes(requested)
+                ? `Your GPS shows you about ${Math.round(distance)} m from the ${place}. If you are there, confirm your arrival with a photo.`
+                : `You must be at the ${place} before continuing.`,
+              code: ARRIVAL_STEPS.includes(requested) ? "far_from_location" : "not_at_location",
+              distance: Math.round(distance),
             });
           }
         }
@@ -434,6 +472,7 @@ export const updateOrderStatus =
           $set: {
             status: requested,
             statusChangedAt: new Date(),
+            ...(arrival ? { [`arrivals.${ARRIVAL_KIND[requested]}`]: arrival } : {}),
             ...(requested === "failed"
               ? { cancelReason: String(req.body?.reason || "").slice(0, 300) }
               : {}),
@@ -466,8 +505,10 @@ export const updateOrderStatus =
         assignment,
         actor: "courier",
         location: courierPoint,
-        note: requested === "failed" ? updated.cancelReason : "",
+        note: requested === "failed" ? updated.cancelReason : arrival ? arrivalNote(ARRIVAL_KIND[requested], arrival) : "",
       });
+
+      keepPhoto = Boolean(arrival?.photoFile);
 
       if (requested === "delivered") {
         await creditCourier(updated);

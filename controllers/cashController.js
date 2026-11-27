@@ -7,6 +7,7 @@ import Courier from "../models/Courier.js";
 import Order from "../models/Order.js";
 import { CASH_DIR, CASH_STATUSES, cashView, isCashOrder } from "../services/cash.js";
 import { recordEvent } from "../services/deliveryEvents.js";
+import { ARRIVAL_DIR } from "../services/arrival.js";
 
 const removeUploaded = (file) => file && fs.existsSync(file.path) && fs.unlinkSync(file.path);
 
@@ -83,6 +84,23 @@ export const cashProof = async (req, res) => {
 
   if (!file || !fs.existsSync(file)) {
     return res.status(404).json({ message: "No cash photo for this order" });
+  }
+
+  res.set("Cache-Control", "private, no-store");
+  return res.sendFile(file);
+};
+
+export const arrivalPhoto = async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id) || !["pickup", "delivery"].includes(req.params.kind)) {
+    return res.status(404).json({ message: "Order not found" });
+  }
+
+  const order = await Order.findById(req.params.id);
+  const name = path.basename(String(order?.arrivals?.[req.params.kind]?.photoFile || ""));
+  const file = name && path.join(ARRIVAL_DIR, name);
+
+  if (!file || !fs.existsSync(file)) {
+    return res.status(404).json({ message: "No arrival photo for this order" });
   }
 
   res.set("Cache-Control", "private, no-store");
