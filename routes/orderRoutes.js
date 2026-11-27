@@ -1,5 +1,7 @@
 import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
+import { recordCash } from "../controllers/cashController.js";
+import { cashUpload } from "../services/cash.js";
 
 import {
   getPendingOrders,
@@ -34,6 +36,13 @@ router.put(
   updateOrderStatus
 );
 
+
+router.post(
+  "/:id/cash",
+  authMiddleware,
+  cashUpload.single("photo"),
+  recordCash
+);
 
 router.get(
   "/active",

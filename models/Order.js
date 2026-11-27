@@ -218,6 +218,12 @@ deliveryCodeAttempts: {
   default: 0,
 },
 
+cash: {
+  amount: Number,
+  collectedAt: Date,
+  proofFile: String,
+},
+
 cancelReason: {
   type: String,
   default: "",

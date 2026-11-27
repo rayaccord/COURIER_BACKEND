@@ -4,6 +4,7 @@ import Courier from "../models/Courier.js";
 import Transaction from "../models/Transaction.js";
 import settings from "../config/settings.js";
 import { recordEvent } from "../services/deliveryEvents.js";
+import { cashRequired, isCashOrder } from "../services/cash.js";
 import { weekEarnings } from "../services/earnings.js";
 import {
   ACTIVE_STATUSES,
@@ -387,6 +388,13 @@ export const updateOrderStatus =
             });
           }
         }
+      }
+
+      if (requested === "delivered" && cashRequired() && isCashOrder(order) && !order.cash?.collectedAt) {
+        return res.status(400).json({
+          message: "Collect the cash and take a photo before you mark the order delivered.",
+          code: "cash_required",
+        });
       }
 
       if (requested === "delivered" && order.deliveryCode) {

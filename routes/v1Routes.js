@@ -22,6 +22,7 @@ import {
 } from "../controllers/platformController.js";
 import { agreementTemplateInfo, courierAgreementPage, decideAgreement, saveAgreementTemplate } from "../controllers/agreementController.js";
 import { templateUpload } from "../services/agreement.js";
+import { cashProof } from "../controllers/cashController.js";
 
 const router = express.Router();
 
@@ -49,6 +50,7 @@ router.get("/agreement/template", agreementTemplateInfo);
 router.put("/agreement/template", templateUpload.single("file"), saveAgreementTemplate);
 router.get("/couriers/:id/agreement/pages/:page", courierAgreementPage);
 router.post("/couriers/:id/agreement", decideAgreement);
+router.get("/orders/:id/cash-proof", cashProof);
 router.get("/withdrawals", listWithdrawals);
 router.post("/withdrawals/:id/status", setWithdrawalStatus);
 

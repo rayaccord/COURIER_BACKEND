@@ -1,6 +1,7 @@
 import crypto from "crypto";
 
 import settings from "../config/settings.js";
+import { cashView } from "./cash.js";
 import DeliveryEvent from "../models/DeliveryEvent.js";
 import Platform from "../models/Platform.js";
 import WebhookOutbox from "../models/WebhookOutbox.js";
@@ -154,6 +155,7 @@ export const serializeDelivery = (
     updated_at: iso(order.updatedAt),
     status_changed_at: iso(order.statusChangedAt),
     ...(order.deliveryCode ? { delivery_code: order.deliveryCode } : {}),
+    cash: cashView(order),
   };
 };
 
@@ -241,6 +243,7 @@ export const recordEvent = async ({
         }
       : null,
     note,
+    cash: cashView(order),
   };
 
   await WebhookOutbox.create({
